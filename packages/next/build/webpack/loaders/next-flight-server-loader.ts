@@ -65,7 +65,7 @@ async function parseModuleInfo({
     const isNodeModuleImport_ =
       /[\\/]node_modules[\\/]/.test(resolvedPath) &&
       // exclude next built-in modules
-      !isNextBuiltinClientComponent(resolvedPath)
+      !isNextBuiltinClientComponent(resolvedPath, { fullPath: true })
 
     return [isBuiltinModule_, isNodeModuleImport_] as const
   }
@@ -262,7 +262,7 @@ export default async function transformSource(
               `import(/* webpackMode: "${
                 isClientCompilation &&
                 isClientComponent(importSource) &&
-                !isNextBuiltinClientComponent(importSource)
+                !isNextBuiltinClientComponent(importSource, { fullPath: false })
                   ? 'lazy'
                   : 'eager'
               }" */ ${JSON.stringify(importSource)});`

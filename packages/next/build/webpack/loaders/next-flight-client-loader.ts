@@ -57,7 +57,7 @@ async function collectExports(
   const names: string[] = []
 
   // Next.js built-in client components
-  if (isNextBuiltinClientComponent(resourcePath)) {
+  if (isNextBuiltinClientComponent(resourcePath, { fullPath: true })) {
     names.push('default')
   }
 
@@ -158,7 +158,9 @@ export default async function transformSource(
   const moduleRefDef =
     "const MODULE_REFERENCE = Symbol.for('react.module.reference');\n"
 
-  const isNextClientBuiltIn = isNextBuiltinClientComponent(resourcePath)
+  const isNextClientBuiltIn = isNextBuiltinClientComponent(resourcePath, {
+    fullPath: true,
+  })
 
   const clientRefsExports = names.reduce((res: any, name) => {
     const moduleRef =

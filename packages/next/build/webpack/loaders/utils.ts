@@ -2,12 +2,23 @@ export const defaultJsFileExtensions = ['js', 'mjs', 'jsx', 'ts', 'tsx']
 const imageExtensions = ['jpg', 'jpeg', 'png', 'webp', 'avif']
 const nextClientComponents = ['link', 'image', 'head', 'script']
 
-const NEXT_BUILT_IN_CLIENT_RSC_REGEX = new RegExp(
+const NEXT_BUILT_IN_CLIENT_RSC_FILE_PATH_REGEX = new RegExp(
   `[\\\\/]next[\\\\/](${nextClientComponents.join('|')})\\.js$`
 )
 
-export function isNextBuiltinClientComponent(resourcePath: string) {
-  return NEXT_BUILT_IN_CLIENT_RSC_REGEX.test(resourcePath)
+const NEXT_BUILT_IN_CLIENT_RSC_IMPORT_PATH_REGEX = new RegExp(
+  `next/${nextClientComponents.join('|')}`
+)
+
+export function isNextBuiltinClientComponent(
+  resourcePath: string,
+  { fullPath }: { fullPath: boolean }
+) {
+  const regex = fullPath
+    ? NEXT_BUILT_IN_CLIENT_RSC_FILE_PATH_REGEX
+    : NEXT_BUILT_IN_CLIENT_RSC_IMPORT_PATH_REGEX
+
+  return regex.test(resourcePath)
 }
 
 export function buildExports(moduleExports: any, isESM: boolean) {
