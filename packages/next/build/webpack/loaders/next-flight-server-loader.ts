@@ -262,7 +262,7 @@ export default async function transformSource(
               `import(/* webpackMode: "${
                 isClientCompilation &&
                 isClientComponent(importSource) &&
-                !/next\/(link|image|script|head)/.test(importSource)
+                !isNextBuiltinClientComponent(importSource)
                   ? 'lazy'
                   : 'eager'
               }" */ ${JSON.stringify(importSource)});`
