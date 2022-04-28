@@ -13,7 +13,7 @@ import { One, Two, TwoAliased } from '../components/export-all/index.client'
 export default function Page() {
   return (
     <div>
-      <div>
+      {/* <div>
         {a}
         {b}
         {c}
@@ -31,9 +31,13 @@ export default function Page() {
       </div>
       <div>
         <CjsClient />
-      </div>
+      </div> */}
       <div>
-        Export All: <One />, <Two />, <TwoAliased />
+        Export All: <One />
+        {`,`}
+        <Two />
+        {`,`}
+        <TwoAliased />
       </div>
     </div>
   )

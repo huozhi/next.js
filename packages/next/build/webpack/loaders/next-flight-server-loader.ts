@@ -257,16 +257,27 @@ export default async function transformSource(
       __webpack_require__,
       _: () => {
         ${imports
-          .map(
-            (importSource) =>
-              `import(/* webpackMode: "${
-                isClientCompilation &&
-                isClientComponent(importSource) &&
-                !isNextBuiltinClientComponent(importSource, { fullPath: false })
-                  ? 'lazy'
-                  : 'eager'
-              }" */ ${JSON.stringify(importSource)});`
-          )
+          .map((importSource) => {
+            const isClientSource =
+              isClientCompilation &&
+              ((isClientComponent(importSource) &&
+                !isNextBuiltinClientComponent(importSource, {
+                  fullPath: false,
+                })) ||
+                importSource.endsWith('.client') ||
+                !importSource.includes(`next-flight-server-loader`))
+
+            console.log(
+              isClientCompilation ? 'CC:' : 'SS:',
+              importSource,
+              isClientSource
+            )
+
+            return `import(/* webpackMode: "${
+              isClientSource ? 'lazy' : 'eager'
+            }" */
+                ${JSON.stringify(importSource)});`
+          })
           .join('\n')}
       },
       server: ${isServerExt ? 'true' : 'false'}
