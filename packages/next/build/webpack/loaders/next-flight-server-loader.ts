@@ -264,19 +264,15 @@ export default async function transformSource(
                 !isNextBuiltinClientComponent(importSource, {
                   fullPath: false,
                 })) ||
+                isNextBuiltinClientComponent(importSource, {
+                  fullPath: true,
+                }) ||
                 importSource.endsWith('.client') ||
                 !importSource.includes(`next-flight-server-loader`))
 
-            console.log(
-              isClientCompilation ? 'CC:' : 'SS:',
-              importSource,
-              isClientSource
-            )
-
             return `import(/* webpackMode: "${
               isClientSource ? 'lazy' : 'eager'
-            }" */
-                ${JSON.stringify(importSource)});`
+            }" */ ${JSON.stringify(importSource)});`
           })
           .join('\n')}
       },

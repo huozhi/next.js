@@ -17894,13 +17894,12 @@ rc@^1.0.1, rc@^1.1.6, rc@^1.2.7, rc@^1.2.8:
     object-assign "^4.1.1"
     scheduler "^0.20.2"
 
-react-dom@18.1.0:
-  version "18.1.0"
-  resolved "https://registry.yarnpkg.com/react-dom/-/react-dom-18.1.0.tgz#7f6dd84b706408adde05e1df575b3a024d7e8a2f"
-  integrity sha512-fU1Txz7Budmvamp7bshe4Zi32d0ll7ect+ccxNu9FlObT605GOEB8BfO4tmRJ39R5Zj831VCpvQ05QPBW5yb+w==
+"react-dom@https://react-builds.vercel.app/api/commits/ce404fc/packages/react-dom":
+  version "0.0.0-experimental-ce404fcdf-20220428"
+  resolved "https://react-builds.vercel.app/api/commits/ce404fc/packages/react-dom#05a6cbfc6b5dace886ab9e0b937b33eb73a44950"
   dependencies:
     loose-envify "^1.1.0"
-    scheduler "^0.22.0"
+    scheduler "https://react-builds.vercel.app/api/commits/ce404fcdf8bc4fe68eaf3c6a2bec948d9d36e2fc/packages/scheduler"
 
 react-is@17.0.2:
   version "17.0.2"
@@ -17953,10 +17952,9 @@ react-virtualized@9.22.3:
     prop-types "^15.7.2"
     react-lifecycles-compat "^3.0.4"
 
-react@18.1.0:
-  version "18.1.0"
-  resolved "https://registry.yarnpkg.com/react/-/react-18.1.0.tgz#6f8620382decb17fdc5cc223a115e2adbf104890"
-  integrity sha512-4oL8ivCz5ZEPyclFQXaNksK3adutVS8l2xzZU0cqEFrE9Sb7fC0EFK5uEk74wIreL1DERyjvsU915j1pcT2uEQ==
+"react@https://react-builds.vercel.app/api/commits/ce404fc/packages/react":
+  version "0.0.0-experimental-ce404fcdf-20220428"
+  resolved "https://react-builds.vercel.app/api/commits/ce404fc/packages/react#57ee17a336fe4b3da199b9de056f779357712a6a"
   dependencies:
     loose-envify "^1.1.0"
 
@@ -18909,10 +18907,9 @@ scheduler@^0.20.2:
     loose-envify "^1.1.0"
     object-assign "^4.1.1"
 
-scheduler@^0.22.0:
-  version "0.22.0"
-  resolved "https://registry.yarnpkg.com/scheduler/-/scheduler-0.22.0.tgz#83a5d63594edf074add9a7198b1bae76c3db01b8"
-  integrity sha512-6QAm1BgQI88NPYymgGQLCZgvep4FyePDWFpXVK+zNSUgHwlqpJy8VEh8Et0KxTACS4VWwMousBElAZOH9nkkoQ==
+"scheduler@https://react-builds.vercel.app/api/commits/ce404fcdf8bc4fe68eaf3c6a2bec948d9d36e2fc/packages/scheduler":
+  version "0.0.0-experimental-ce404fcdf-20220428"
+  resolved "https://react-builds.vercel.app/api/commits/ce404fcdf8bc4fe68eaf3c6a2bec948d9d36e2fc/packages/scheduler#fa18ae902894ced4018cd74a94347e5fd62d68b6"
   dependencies:
     loose-envify "^1.1.0"
 
