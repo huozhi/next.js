@@ -5,7 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import type webpack5 from 'webpack5'
 import { webpack, sources } from 'next/dist/compiled/webpack/webpack'
+import { nonNullable } from '../../../lib/non-nullable'
 import { MIDDLEWARE_FLIGHT_MANIFEST } from '../../../shared/lib/constants'
 import { createClientComponentFilter } from '../loaders/utils'
 
@@ -63,10 +65,17 @@ export class FlightManifestPlugin {
     })
   }
 
-  createAsset(assets: any, compilation: any) {
+  createAsset(assets: any, compilation: webpack5.Compilation) {
     const manifest: any = {}
-    compilation.chunkGroups.forEach((chunkGroup: any) => {
-      function recordModule(id: string, chunk: any, mod: any) {
+    compilation.chunkGroups.forEach((chunkGroup) => {
+      // Exclude the chunks when this chunk group will be loaded on initial page load
+      // since they're already loaded by next.js.
+      // e.g. framework.js chunk of the page.
+      if (chunkGroup.isInitial()) {
+        return
+      }
+
+      function recordModule(id: number | string, mod: any) {
         const resource = mod.resource
 
         // TODO: Hook into deps instead of the target module.
@@ -86,7 +95,7 @@ export class FlightManifestPlugin {
               }
               return null
             })
-            .filter(Boolean)
+            .filter(nonNullable)
         )
 
         moduleExportedKeys.forEach((name) => {
@@ -94,7 +103,7 @@ export class FlightManifestPlugin {
             moduleExports[name] = {
               id,
               name,
-              chunks: chunk.ids,
+              chunks: chunkGroup.chunks.map((chunk) => chunk.id),
             }
           }
         })
@@ -111,11 +120,12 @@ export class FlightManifestPlugin {
           if (typeof modId === 'string') {
             modId = modId.split('?')[0]
           }
-          recordModule(modId, chunk, mod)
+          recordModule(modId, mod)
           // If this is a concatenation, register each child to the parent ID.
-          if (mod.modules) {
-            mod.modules.forEach((concatenatedMod: any) => {
-              recordModule(modId, chunk, concatenatedMod)
+          const anyMod = mod as any
+          if (anyMod.modules) {
+            anyMod.modules.forEach((concatenatedMod: any) => {
+              recordModule(modId, concatenatedMod)
             })
           }
         }
