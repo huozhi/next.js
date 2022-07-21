@@ -266,7 +266,7 @@ export default function OuterLayoutRouter({
   loading: React.ReactNode | undefined
   rootLayoutIncluded: boolean
 }) {
-  const { childNodes, tree, url } = useContext(AppTreeContext)
+  const { childNodes, tree, url, stylesheets } = useContext(AppTreeContext)
 
   let childNodesForParallelRouter = childNodes.get(parallelRouterKey)
   if (!childNodesForParallelRouter) {
@@ -287,11 +287,11 @@ export default function OuterLayoutRouter({
 
   return (
     <>
-      {/* {stylesheets
+      {stylesheets
         ? stylesheets.map((href) => (
             <link rel="stylesheet" href={`/_next/${href}`} key={href} />
           ))
-        : null} */}
+        : null}
       {preservedSegments.map((preservedSegment) => {
         return (
           <LoadingBoundary loading={loading} key={preservedSegment}>

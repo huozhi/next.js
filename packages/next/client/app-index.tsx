@@ -33,14 +33,14 @@ self.__next_require__ = __webpack_require__
 ;(self as any).__next_chunk_load__ = (chunk: string) => {
   if (!chunk) return Promise.resolve()
   if (chunk.endsWith('.css')) {
-    const chunkPath = `/_next/${chunk}`
-    const existingTag = document.querySelector(`link[href="${chunkPath}"]`)
-    if (!existingTag) {
-      const link = document.createElement('link')
-      link.rel = 'stylesheet'
-      link.href = chunkPath
-      document.head.appendChild(link)
-    }
+    // const chunkPath = `/_next/${chunk}`
+    // const existingTag = document.querySelector(`link[href="${chunkPath}"]`)
+    // if (!existingTag) {
+    //   const link = document.createElement('link')
+    //   link.rel = 'stylesheet'
+    //   link.href = chunkPath
+    //   document.head.appendChild(link)
+    // }
     return Promise.resolve()
   }
   const [chunkId, chunkFileName] = chunk.split(':')

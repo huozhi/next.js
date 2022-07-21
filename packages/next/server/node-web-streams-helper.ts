@@ -175,13 +175,13 @@ export async function continueFromInitialStream(
     dataStream,
     generateStaticHTML,
     flushEffectHandler,
-    initialStylesheets,
-  }: {
+  }: // initialStylesheets,
+  {
     suffix?: string
     dataStream?: ReadableStream<Uint8Array>
     generateStaticHTML: boolean
     flushEffectHandler?: () => string
-    initialStylesheets?: string[]
+    // initialStylesheets?: string[]
   }
 ): Promise<ReadableStream<Uint8Array>> {
   const closeTag = '</body></html>'
@@ -197,11 +197,11 @@ export async function continueFromInitialStream(
     suffixUnclosed != null ? createDeferredSuffixStream(suffixUnclosed) : null,
     dataStream ? createInlineDataStream(dataStream) : null,
     suffixUnclosed != null ? createSuffixStream(closeTag) : null,
-    createHeadInjectionTransformStream(
-      (initialStylesheets || [])
-        .map((href) => `<link rel="stylesheet" href="/_next/${href}">`)
-        .join('')
-    ),
+    // createHeadInjectionTransformStream(
+    //   (initialStylesheets || [])
+    //     .map((href) => `<link rel="stylesheet" href="/_next/${href}">`)
+    //     .join('')
+    // ),
   ].filter(nonNullable)
 
   return transforms.reduce(
