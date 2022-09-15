@@ -522,7 +522,7 @@ export async function renderToHTMLOrFlight(
   const LayoutRouter =
     ComponentMod.LayoutRouter as typeof import('../client/components/layout-router.client').default
   const RenderFromTemplateContext =
-    ComponentMod.RenderFromTemplateContext as typeof import('../client/components/render-from-template-context.client').default
+    ComponentMod.RenderFromTemplateContext as typeof import('../client/components/render-from-template-context').default
   const HotReloader = ComponentMod.HotReloader as
     | typeof import('../client/components/hot-reloader.client').default
     | null
