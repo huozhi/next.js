@@ -28,7 +28,7 @@ impl Fold for HookOptimizer {
         if &src.value == "react" || &src.value == "preact/hooks" {
             for specifier in specifiers {
                 if let ImportSpecifier::Named(named_specifier) = specifier {
-                    if named_specifier.local.sym.starts_with("use") {
+                    if named_specifier.local.sym.eq("useState") || named_specifier.local.sym.eq("useReducer") {
                         self.hooks.push(named_specifier.local.sym.clone())
                     }
                 }

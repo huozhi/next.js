@@ -13,20 +13,27 @@ describe('next/swc', () => {
     it('should transform Array-destructured hook return values use object destructuring', async () => {
       const output = await swc(
         trim`
-        import { useState } from 'react';
+        import { useState, useReducer, useMemo } from 'react';
         const [count, setCount] = useState(0);
+        const [state, dispatch] = useReducer((s) => s, {});
+        const memeState = useMemo(() => {})
       `
       )
 
       expect(output).toMatch(trim`
         var ref = useState(0), count = ref[0], setCount = ref[1];
+
       `)
 
       expect(output).toMatchInlineSnapshot(`
-"import { useState } from \\"react\\";
-var ref = useState(0), count = ref[0], setCount = ref[1];
-"
-`)
+        "import { useState, useReducer, useMemo } from \\"react\\";
+        var ref = useState(0), count = ref[0], setCount = ref[1];
+        var ref1 = useReducer(function(s) {
+            return s;
+        }, {}), state = ref1[0], dispatch = ref1[1];
+        var memeState = useMemo(function() {});
+        "
+      `)
     })
 
     it('should be able to ignore some Array-destructured hook return values', async () => {
@@ -42,10 +49,10 @@ var ref = useState(0), count = ref[0], setCount = ref[1];
       `)
 
       expect(output).toMatchInlineSnapshot(`
-"import { useState } from \\"react\\";
-var ref = useState(0), setCount = ref[1];
-"
-`)
+        "import { useState } from \\"react\\";
+        var ref = useState(0), setCount = ref[1];
+        "
+      `)
     })
   })
 })
