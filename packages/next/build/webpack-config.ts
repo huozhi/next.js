@@ -1130,11 +1130,9 @@ export default async function getBaseWebpackConfig(
       // so that the DefinePlugin can inject process.env values
       const isNextExternal =
         // Treat next internals as non-external for server layer
-        layer === WEBPACK_LAYERS.server
-          ? false
-          : /next[/\\]dist[/\\](shared|server)[/\\](?!lib[/\\](router[/\\]router|dynamic))/.test(
-              localRes
-            )
+        /next[/\\]dist[/\\](shared|server)[/\\](?!lib[/\\](router[/\\]router|dynamic|head))/.test(
+          localRes
+        )
 
       if (isNextExternal) {
         // Generate Next.js external import
@@ -1151,7 +1149,7 @@ export default async function getBaseWebpackConfig(
             .replace(/\\/g, '/')
         )
         return `commonjs ${externalRequest}`
-      } else if (layer !== WEBPACK_LAYERS.client) {
+      } else {
         // We don't want to retry local requests
         // with other preferEsm options
         return
