@@ -41,11 +41,11 @@ function parseModel(response, json) {
 }
 
 // eslint-disable-next-line no-unused-vars
-function resolveClientReference(bundlerConfig, moduleData) {
+function resolveClientReference(bundlerConfig, metadata) {
   if (bundlerConfig) {
-    var resolvedModuleData = bundlerConfig[moduleData.id][moduleData.name];
+    var resolvedModuleData = bundlerConfig[metadata.id][metadata.name];
 
-    if (moduleData.async) {
+    if (metadata.async) {
       return {
         id: resolvedModuleData.id,
         chunks: resolvedModuleData.chunks,
@@ -57,7 +57,7 @@ function resolveClientReference(bundlerConfig, moduleData) {
     }
   }
 
-  return moduleData;
+  return metadata;
 } // The chunk cache contains all the chunks we've preloaded so far.
 // If they're still pending they're a thenable. This map also exists
 // in Webpack but unfortunately it's not exposed so we have to
@@ -71,8 +71,8 @@ function ignoreReject() {// We rely on rejected promises to be handled by anothe
 // This function doesn't suspend.
 
 
-function preloadModule(moduleData) {
-  var chunks = moduleData.chunks;
+function preloadModule(metadata) {
+  var chunks = metadata.chunks;
   var promises = [];
 
   for (var i = 0; i < chunks.length; i++) {
@@ -92,8 +92,8 @@ function preloadModule(moduleData) {
     }
   }
 
-  if (moduleData.async) {
-    var existingPromise = asyncModuleCache.get(moduleData.id);
+  if (metadata.async) {
+    var existingPromise = asyncModuleCache.get(metadata.id);
 
     if (existingPromise) {
       if (existingPromise.status === 'fulfilled') {
@@ -103,7 +103,7 @@ function preloadModule(moduleData) {
       return existingPromise;
     } else {
       var modulePromise = Promise.all(promises).then(function () {
-        return globalThis.__next_require__(moduleData.id);
+        return globalThis.__next_require__(metadata.id);
       });
       modulePromise.then(function (value) {
         var fulfilledThenable = modulePromise;
@@ -114,7 +114,7 @@ function preloadModule(moduleData) {
         rejectedThenable.status = 'rejected';
         rejectedThenable.reason = reason;
       });
-      asyncModuleCache.set(moduleData.id, modulePromise);
+      asyncModuleCache.set(metadata.id, modulePromise);
       return modulePromise;
     }
   } else if (promises.length > 0) {
@@ -125,13 +125,13 @@ function preloadModule(moduleData) {
 } // Actually require the module or suspend if it's not yet ready.
 // Increase priority if necessary.
 
-function requireModule(moduleData) {
+function requireModule(metadata) {
   var moduleExports;
 
-  if (moduleData.async) {
+  if (metadata.async) {
     // We assume that preloadModule has been called before, which
     // should have added something to the module cache.
-    var promise = asyncModuleCache.get(moduleData.id);
+    var promise = asyncModuleCache.get(metadata.id);
 
     if (promise.status === 'fulfilled') {
       moduleExports = promise.value;
@@ -139,22 +139,22 @@ function requireModule(moduleData) {
       throw promise.reason;
     }
   } else {
-    moduleExports = globalThis.__next_require__(moduleData.id);
+    moduleExports = globalThis.__next_require__(metadata.id);
   }
 
-  if (moduleData.name === '*') {
+  if (metadata.name === '*') {
     // This is a placeholder value that represents that the caller imported this
     // as a CommonJS module as is.
     return moduleExports;
   }
 
-  if (moduleData.name === '') {
+  if (metadata.name === '') {
     // This is a placeholder value that represents that the caller accessed the
     // default property of this if it was an ESM interop module.
     return moduleExports.__esModule ? moduleExports.default : moduleExports;
   }
 
-  return moduleExports[moduleData.name];
+  return moduleExports[metadata.name];
 }
 
 // ATTENTION
@@ -517,8 +517,7 @@ function createModelResolver(chunk, parentObject, key) {
       deps: 1,
       value: null
     };
-  } // $FlowFixMe[missing-local-annot]
-
+  }
 
   return function (value) {
     parentObject[key] = value;
@@ -545,6 +544,29 @@ function createModelReject(chunk) {
   return function (error) {
     return triggerErrorOnChunk(chunk, error);
   };
+}
+
+function createServerReferenceProxy(response, metaData) {
+  var callServer = response._callServer;
+
+  var proxy = function () {
+    // $FlowFixMe[method-unbinding]
+    var args = Array.prototype.slice.call(arguments);
+    var p = metaData.bound;
+
+    if (p.status === INITIALIZED) {
+      var bound = p.value;
+      return callServer(metaData, bound.concat(args));
+    } // Since this is a fake Promise whose .then doesn't chain, we have to wrap it.
+    // TODO: Remove the wrapper once that's fixed.
+
+
+    return Promise.resolve(p).then(function (bound) {
+      return callServer(metaData, bound.concat(args));
+    });
+  };
+
+  return proxy;
 }
 
 function parseModelString(response, parentObject, key, value) {
@@ -583,18 +605,20 @@ function parseModelString(response, parentObject, key, value) {
 
       case 'S':
         {
+          // Symbol
           return Symbol.for(value.substring(2));
         }
 
       case 'P':
         {
+          // Server Context Provider
           return getOrCreateServerContext(value.substring(2)).Provider;
         }
 
-      default:
+      case 'F':
         {
-          // We assume that anything else is a reference ID.
-          var _id2 = parseInt(value.substring(1), 16);
+          // Server Reference
+          var _id2 = parseInt(value.substring(2), 16);
 
           var _chunk2 = getChunk(response, _id2);
 
@@ -602,27 +626,54 @@ function parseModelString(response, parentObject, key, value) {
             case RESOLVED_MODEL:
               initializeModelChunk(_chunk2);
               break;
-
-            case RESOLVED_MODULE:
-              initializeModuleChunk(_chunk2);
-              break;
           } // The status might have changed after initialization.
 
 
           switch (_chunk2.status) {
             case INITIALIZED:
-              return _chunk2.value;
+              {
+                var metadata = _chunk2.value;
+                return createServerReferenceProxy(response, metadata);
+              }
+            // We always encode it first in the stream so it won't be pending.
+
+            default:
+              throw _chunk2.reason;
+          }
+        }
+
+      default:
+        {
+          // We assume that anything else is a reference ID.
+          var _id3 = parseInt(value.substring(1), 16);
+
+          var _chunk3 = getChunk(response, _id3);
+
+          switch (_chunk3.status) {
+            case RESOLVED_MODEL:
+              initializeModelChunk(_chunk3);
+              break;
+
+            case RESOLVED_MODULE:
+              initializeModuleChunk(_chunk3);
+              break;
+          } // The status might have changed after initialization.
+
+
+          switch (_chunk3.status) {
+            case INITIALIZED:
+              return _chunk3.value;
 
             case PENDING:
             case BLOCKED:
               var parentChunk = initializingChunk;
 
-              _chunk2.then(createModelResolver(parentChunk, parentObject, key), createModelReject(parentChunk));
+              _chunk3.then(createModelResolver(parentChunk, parentObject, key), createModelReject(parentChunk));
 
               return null;
 
             default:
-              throw _chunk2.reason;
+              throw _chunk3.reason;
           }
         }
     }
@@ -641,10 +692,16 @@ function parseModelTuple(response, value) {
 
   return value;
 }
-function createResponse(bundlerConfig) {
+
+function missingCall() {
+  throw new Error('Trying to call a function from "use server" but the callServer option ' + 'was not implemented in your router runtime.');
+}
+
+function createResponse(bundlerConfig, callServer) {
   var chunks = new Map();
   var response = {
     _bundlerConfig: bundlerConfig,
+    _callServer: callServer !== undefined ? callServer : missingCall,
     _chunks: chunks
   };
   return response;
@@ -662,12 +719,12 @@ function resolveModel(response, id, model) {
 function resolveModule(response, id, model) {
   var chunks = response._chunks;
   var chunk = chunks.get(id);
-  var moduleMetaData = parseModel(response, model);
-  var moduleReference = resolveClientReference(response._bundlerConfig, moduleMetaData); // TODO: Add an option to encode modules that are lazy loaded.
+  var clientReferenceMetadata = parseModel(response, model);
+  var clientReference = resolveClientReference(response._bundlerConfig, clientReferenceMetadata); // TODO: Add an option to encode modules that are lazy loaded.
   // For now we preload all modules as early as possible since it's likely
   // that we'll need them.
 
-  var promise = preloadModule(moduleReference);
+  var promise = preloadModule(clientReference);
 
   if (promise) {
     var blockedChunk;
@@ -685,17 +742,17 @@ function resolveModule(response, id, model) {
     }
 
     promise.then(function () {
-      return resolveModuleChunk(blockedChunk, moduleReference);
+      return resolveModuleChunk(blockedChunk, clientReference);
     }, function (error) {
       return triggerErrorOnChunk(blockedChunk, error);
     });
   } else {
     if (!chunk) {
-      chunks.set(id, createResolvedModuleChunk(response, moduleReference));
+      chunks.set(id, createResolvedModuleChunk(response, clientReference));
     } else {
       // This can't actually happen because we don't have any forward
       // references to modules.
-      resolveModuleChunk(chunk, moduleReference);
+      resolveModuleChunk(chunk, clientReference);
     }
   }
 }
@@ -807,11 +864,11 @@ function createFromJSONCallback(response) {
   };
 }
 
-function createResponse$1(bundlerConfig) {
+function createResponse$1(bundlerConfig, callServer) {
   // NOTE: CHECK THE COMPILER OUTPUT EACH TIME YOU CHANGE THIS.
   // It should be inlined to one object literal but minor changes can break it.
   var stringDecoder =  createStringDecoder() ;
-  var response = createResponse(bundlerConfig);
+  var response = createResponse(bundlerConfig, callServer);
   response._partialRow = '';
 
   {
@@ -848,13 +905,13 @@ function startReadingFromStream(response, stream) {
 }
 
 function createFromReadableStream(stream, options) {
-  var response = createResponse$1(options && options.moduleMap ? options.moduleMap : null);
+  var response = createResponse$1(options && options.moduleMap ? options.moduleMap : null, options && options.callServer ? options.callServer : undefined);
   startReadingFromStream(response, stream);
   return getRoot(response);
 }
 
 function createFromFetch(promiseForResponse, options) {
-  var response = createResponse$1(options && options.moduleMap ? options.moduleMap : null);
+  var response = createResponse$1(options && options.moduleMap ? options.moduleMap : null, options && options.callServer ? options.callServer : undefined);
   promiseForResponse.then(function (r) {
     startReadingFromStream(response, r.body);
   }, function (e) {
@@ -864,7 +921,7 @@ function createFromFetch(promiseForResponse, options) {
 }
 
 function createFromXHR(request, options) {
-  var response = createResponse$1(options && options.moduleMap ? options.moduleMap : null);
+  var response = createResponse$1(options && options.moduleMap ? options.moduleMap : null, options && options.callServer ? options.callServer : undefined);
   var processedLength = 0;
 
   function progress(e) {
@@ -919,15 +976,17 @@ function B(a){switch(a.status){case "resolved_model":y(a);break;case "resolved_m
 function E(a,b){if("pending"===a.status||"blocked"===a.status){var c=a.reason;a.status="rejected";a.reason=b;null!==c&&C(c,b)}}function F(a,b){if("pending"===a.status||"blocked"===a.status){var c=a.value,d=a.reason;a.status="resolved_module";a.value=b;null!==c&&(z(a),D(a,c,d))}}var G=null,H=null;
 function y(a){var b=G,c=H;G=a;H=null;try{var d=JSON.parse(a.value,a._response._fromJSON);null!==H&&0<H.deps?(H.value=d,a.status="blocked",a.value=null,a.reason=null):(a.status="fulfilled",a.value=d)}catch(e){a.status="rejected",a.reason=e}finally{G=b,H=c}}
 function z(a){try{var b=a.value;if(b.async){var c=p.get(b.id);if("fulfilled"===c.status)var d=c.value;else throw c.reason;}else d=globalThis.__next_require__(b.id);var e="*"===b.name?d:""===b.name?d.__esModule?d.default:d:d[b.name];a.status="fulfilled";a.value=e}catch(f){a.status="rejected",a.reason=f}}function I(a,b){a._chunks.forEach(function(a){"pending"===a.status&&E(a,b)})}function J(a,b){var c=a._chunks,d=c.get(b);d||(d=new x("pending",null,null,a),c.set(b,d));return d}
-function K(a,b,c){if(H){var d=H;d.deps++}else d=H={deps:1,value:null};return function(e){b[c]=e;d.deps--;0===d.deps&&"blocked"===a.status&&(e=a.value,a.status="fulfilled",a.value=d.value,null!==e&&C(e,d.value))}}function M(a){return function(b){return E(a,b)}}
-function N(a,b,c,d){if("$"===d[0]){if("$"===d)return t;switch(d[1]){case "$":return d.substring(1);case "L":return b=parseInt(d.substring(2),16),a=J(a,b),{$$typeof:u,_payload:a,_init:B};case "@":return b=parseInt(d.substring(2),16),J(a,b);case "S":return Symbol.for(d.substring(2));case "P":return a=d.substring(2),w[a]||(w[a]=h.createServerContext(a,v)),w[a].Provider;default:d=parseInt(d.substring(1),16);a=J(a,d);switch(a.status){case "resolved_model":y(a);break;case "resolved_module":z(a)}switch(a.status){case "fulfilled":return a.value;
-case "pending":case "blocked":return d=G,a.then(K(d,b,c),M(d)),null;default:throw a.reason;}}}return d}function O(a,b,c){var d=a._chunks,e=d.get(b);c=JSON.parse(c,a._fromJSON);var f=m(a._bundlerConfig,c);if(c=r(f)){if(e){var k=e;k.status="blocked"}else k=new x("blocked",null,null,a),d.set(b,k);c.then(function(){return F(k,f)},function(a){return E(k,a)})}else e?F(e,f):d.set(b,new x("resolved_module",f,null,a))}function P(a){I(a,Error("Connection closed."))}
-function Q(a,b){if(""!==b){var c=b.indexOf(":",0),d=parseInt(b.substring(0,c),16);switch(b[c+1]){case "I":O(a,d,b.substring(c+2));break;case "E":c=JSON.parse(b.substring(c+2)).digest;b=Error("An error occurred in the Server Components render. The specific message is omitted in production builds to avoid leaking sensitive details. A digest property is included on this error instance which may provide additional details about the nature of the error.");b.stack="Error: "+b.message;b.digest=c;c=a._chunks;
-var e=c.get(d);e?E(e,b):c.set(d,new x("rejected",null,b,a));break;default:b=b.substring(c+1),e=a._chunks,(c=e.get(d))?"pending"===c.status&&(a=c.value,d=c.reason,c.status="resolved_model",c.value=b,null!==a&&(y(c),D(c,a,d))):e.set(d,new x("resolved_model",b,null,a))}}}function R(a){return function(b,c){return"string"===typeof c?N(a,this,b,c):"object"===typeof c&&null!==c?(b=c[0]===t?{$$typeof:t,type:c[1],key:c[2],ref:null,props:c[3],_owner:null}:c,b):c}}
-function S(a){var b=new TextDecoder,c=new Map;a={_bundlerConfig:a,_chunks:c,_partialRow:"",_stringDecoder:b};a._fromJSON=R(a);return a}function T(a,b){function c(b){var f=b.value;if(b.done)P(a);else{b=f;f=a._stringDecoder;for(var g=b.indexOf(10);-1<g;){var L=a._partialRow;var A=b.subarray(0,g);A=f.decode(A);Q(a,L+A);a._partialRow="";b=b.subarray(g+1);g=b.indexOf(10)}a._partialRow+=f.decode(b,l);return e.read().then(c).catch(d)}}function d(b){I(a,b)}var e=b.getReader();e.read().then(c).catch(d)}
-exports.createFromFetch=function(a,b){var c=S(b&&b.moduleMap?b.moduleMap:null);a.then(function(a){T(c,a.body)},function(a){I(c,a)});return J(c,0)};exports.createFromReadableStream=function(a,b){b=S(b&&b.moduleMap?b.moduleMap:null);T(b,a);return J(b,0)};
-exports.createFromXHR=function(a,b){function c(){for(var b=a.responseText,c=f,d=b.indexOf("\n",c);-1<d;)c=e._partialRow+b.substring(c,d),Q(e,c),e._partialRow="",c=d+1,d=b.indexOf("\n",c);e._partialRow+=b.substring(c);f=b.length}function d(){I(e,new TypeError("Network error"))}var e=S(b&&b.moduleMap?b.moduleMap:null),f=0;a.addEventListener("progress",c);a.addEventListener("load",function(){c();P(e)});a.addEventListener("error",d);a.addEventListener("abort",d);a.addEventListener("timeout",d);return J(e,
-0)};
+function K(a,b,c){if(H){var d=H;d.deps++}else d=H={deps:1,value:null};return function(e){b[c]=e;d.deps--;0===d.deps&&"blocked"===a.status&&(e=a.value,a.status="fulfilled",a.value=d.value,null!==e&&C(e,d.value))}}function M(a){return function(b){return E(a,b)}}function N(a,b){var c=a._callServer;return function(){var a=Array.prototype.slice.call(arguments),e=b.bound;return"fulfilled"===e.status?c(b,e.value.concat(a)):Promise.resolve(e).then(function(d){return c(b,d.concat(a))})}}
+function O(a,b,c,d){if("$"===d[0]){if("$"===d)return t;switch(d[1]){case "$":return d.substring(1);case "L":return b=parseInt(d.substring(2),16),a=J(a,b),{$$typeof:u,_payload:a,_init:B};case "@":return b=parseInt(d.substring(2),16),J(a,b);case "S":return Symbol.for(d.substring(2));case "P":return a=d.substring(2),w[a]||(w[a]=h.createServerContext(a,v)),w[a].Provider;case "F":b=parseInt(d.substring(2),16);b=J(a,b);switch(b.status){case "resolved_model":y(b)}switch(b.status){case "fulfilled":return N(a,
+b.value);default:throw b.reason;}default:d=parseInt(d.substring(1),16);a=J(a,d);switch(a.status){case "resolved_model":y(a);break;case "resolved_module":z(a)}switch(a.status){case "fulfilled":return a.value;case "pending":case "blocked":return d=G,a.then(K(d,b,c),M(d)),null;default:throw a.reason;}}}return d}function P(){throw Error('Trying to call a function from "use server" but the callServer option was not implemented in your router runtime.');}
+function Q(a,b,c){var d=a._chunks,e=d.get(b);c=JSON.parse(c,a._fromJSON);var f=m(a._bundlerConfig,c);if(c=r(f)){if(e){var k=e;k.status="blocked"}else k=new x("blocked",null,null,a),d.set(b,k);c.then(function(){return F(k,f)},function(a){return E(k,a)})}else e?F(e,f):d.set(b,new x("resolved_module",f,null,a))}function R(a){I(a,Error("Connection closed."))}
+function S(a,b){if(""!==b){var c=b.indexOf(":",0),d=parseInt(b.substring(0,c),16);switch(b[c+1]){case "I":Q(a,d,b.substring(c+2));break;case "E":c=JSON.parse(b.substring(c+2)).digest;b=Error("An error occurred in the Server Components render. The specific message is omitted in production builds to avoid leaking sensitive details. A digest property is included on this error instance which may provide additional details about the nature of the error.");b.stack="Error: "+b.message;b.digest=c;c=a._chunks;
+var e=c.get(d);e?E(e,b):c.set(d,new x("rejected",null,b,a));break;default:b=b.substring(c+1),e=a._chunks,(c=e.get(d))?"pending"===c.status&&(a=c.value,d=c.reason,c.status="resolved_model",c.value=b,null!==a&&(y(c),D(c,a,d))):e.set(d,new x("resolved_model",b,null,a))}}}function T(a){return function(b,c){return"string"===typeof c?O(a,this,b,c):"object"===typeof c&&null!==c?(b=c[0]===t?{$$typeof:t,type:c[1],key:c[2],ref:null,props:c[3],_owner:null}:c,b):c}}
+function U(a,b){var c=new TextDecoder,d=new Map;a={_bundlerConfig:a,_callServer:void 0!==b?b:P,_chunks:d,_partialRow:"",_stringDecoder:c};a._fromJSON=T(a);return a}
+function V(a,b){function c(b){var f=b.value;if(b.done)R(a);else{b=f;f=a._stringDecoder;for(var g=b.indexOf(10);-1<g;){var L=a._partialRow;var A=b.subarray(0,g);A=f.decode(A);S(a,L+A);a._partialRow="";b=b.subarray(g+1);g=b.indexOf(10)}a._partialRow+=f.decode(b,l);return e.read().then(c).catch(d)}}function d(b){I(a,b)}var e=b.getReader();e.read().then(c).catch(d)}
+exports.createFromFetch=function(a,b){var c=U(b&&b.moduleMap?b.moduleMap:null,b&&b.callServer?b.callServer:void 0);a.then(function(a){V(c,a.body)},function(a){I(c,a)});return J(c,0)};exports.createFromReadableStream=function(a,b){b=U(b&&b.moduleMap?b.moduleMap:null,b&&b.callServer?b.callServer:void 0);V(b,a);return J(b,0)};
+exports.createFromXHR=function(a,b){function c(){for(var b=a.responseText,c=f,d=b.indexOf("\n",c);-1<d;)c=e._partialRow+b.substring(c,d),S(e,c),e._partialRow="",c=d+1,d=b.indexOf("\n",c);e._partialRow+=b.substring(c);f=b.length}function d(){I(e,new TypeError("Network error"))}var e=U(b&&b.moduleMap?b.moduleMap:null,b&&b.callServer?b.callServer:void 0),f=0;a.addEventListener("progress",c);a.addEventListener("load",function(){c();R(e)});a.addEventListener("error",d);a.addEventListener("abort",d);a.addEventListener("timeout",
+d);return J(e,0)};
 
 
 /***/ }),
