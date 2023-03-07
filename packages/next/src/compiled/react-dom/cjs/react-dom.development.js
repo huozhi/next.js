@@ -5054,7 +5054,7 @@ var LowPriority = Scheduler.unstable_LowPriority;
 var IdlePriority = Scheduler.unstable_IdlePriority; // this doesn't actually exist on the scheduler, but it *does*
 // on scheduler/unstable_mock, which we'll need for internal testing
 
-var unstable_yieldValue = Scheduler.unstable_yieldValue;
+var log$1 = Scheduler.log;
 var unstable_setDisableYieldValue = Scheduler.unstable_setDisableYieldValue;
 
 var rendererID = null;
@@ -5205,8 +5205,8 @@ function onCommitUnmount(fiber) {
 }
 function setIsStrictModeForDevtools(newIsStrictMode) {
   {
-    if (typeof unstable_yieldValue === 'function') {
-      // We're in a test because Scheduler.unstable_yieldValue only exists
+    if (typeof log$1 === 'function') {
+      // We're in a test because Scheduler.log only exists
       // in SchedulerMock. To reduce the noise in strict mode tests,
       // suppress warnings and disable scheduler yielding during the double render
       unstable_setDisableYieldValue(newIsStrictMode);
@@ -11963,7 +11963,7 @@ function styleTagPropsFromRawProps(rawProps) {
 
 function getStyleKey(href) {
   var limitedEscapedHref = escapeSelectorAttributeValueInsideDoubleQuotes(href);
-  return "href=\"" + limitedEscapedHref + "\"";
+  return "href~=\"" + limitedEscapedHref + "\"";
 }
 
 function getStyleTagSelectorFromKey(key) {
@@ -14983,7 +14983,6 @@ function processUpdateQueue(workInProgress, props, instance, renderLanes) {
   hasForceUpdate = false;
 
   {
-    // $FlowFixMe[escaped-generic] discovered when updating Flow
     currentlyProcessingQueue = queue.shared;
   }
 
@@ -30588,7 +30587,17 @@ function renderRootConcurrent(root, lanes) {
         }
       }
 
-      workLoopConcurrent();
+      if (true && ReactCurrentActQueue.current !== null) {
+        // `act` special case: If we're inside an `act` scope, don't consult
+        // `shouldYield`. Always keep working until the render is complete.
+        // This is not just an optimization: in a unit test environment, we
+        // can't trust the result of `shouldYield`, because the host I/O is
+        // likely mocked.
+        workLoopSync();
+      } else {
+        workLoopConcurrent();
+      }
+
       break;
     } catch (thrownValue) {
       handleThrow(root, thrownValue);
@@ -33046,7 +33055,7 @@ identifierPrefix, onRecoverableError, transitionCallbacks) {
   return root;
 }
 
-var ReactVersion = '18.3.0-next-41110021f-20230301';
+var ReactVersion = '18.3.0-next-1528c5ccd-20230306';
 
 function createPortal$1(children, containerInfo, // TODO: figure out the API for cross-renderer implementation.
 implementation) {
@@ -33141,7 +33150,7 @@ function findHostInstanceWithWarning(component, methodName) {
       }
     }
 
-    return hostFiber.stateNode;
+    return getPublicInstance(hostFiber.stateNode);
   }
 }
 
@@ -33338,7 +33347,7 @@ function findHostInstanceWithNoPortals(fiber) {
     return null;
   }
 
-  return hostFiber.stateNode;
+  return getPublicInstance(hostFiber.stateNode);
 }
 
 var shouldErrorImpl = function (fiber) {

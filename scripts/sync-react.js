@@ -3,6 +3,7 @@
 const path = require('path')
 const { readJson, writeJson } = require('fs-extra')
 const execa = require('execa')
+const fetch = require('node-fetch')
 
 // Use this script to update Next's vendored copy of React and related packages:
 //
