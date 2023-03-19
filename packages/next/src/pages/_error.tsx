@@ -57,6 +57,7 @@ const styles: { [k: string]: React.CSSProperties } = {
     fontWeight: 400,
     lineHeight: '49px',
     margin: 0,
+    textAlign: 'center',
   },
 }
 

@@ -22,6 +22,7 @@ const styles = {
     fontWeight: 400,
     lineHeight: '3em',
     margin: 0,
+    textAlign: 'center',
   },
 } as const
 
