@@ -17,7 +17,7 @@ interface Options {
   pageExtensions: string[]
 }
 
-async function nextMetadataImageLoader(this: any, content: Buffer) {
+async function nextMetadataImageLoader(this: any, content: string) {
   const options: Options = this.getOptions()
   const { type, route, pageExtensions } = options
   const numericSizes = type === 'twitter' || type === 'openGraph'
@@ -29,7 +29,7 @@ async function nextMetadataImageLoader(this: any, content: Buffer) {
     extension = 'jpeg'
   }
 
-  const opts = { context, content }
+  const opts = { context, content: Buffer.from(content) }
 
   // No hash query for favicon.ico
   const contentHash =
@@ -44,6 +44,7 @@ async function nextMetadataImageLoader(this: any, content: Buffer) {
   )
 
   const isDynamicResource = pageExtensions.includes(extension)
+  const shouldGenerateImages = content.includes('generateImageMetadata')
   const pageRoute =
     (isDynamicResource ? fileNameBase : interpolatedName) +
     (contentHash ? '?' + contentHash : '')
@@ -80,7 +81,7 @@ async function nextMetadataImageLoader(this: any, content: Buffer) {
   }
 
   const imageSize = await getImageSize(
-    content,
+    opts.content,
     extension as 'avif' | 'webp' | 'png' | 'jpeg'
   ).catch((err) => err)
 
@@ -123,5 +124,4 @@ async function nextMetadataImageLoader(this: any, content: Buffer) {
   }`
 }
 
-export const raw = true
 export default nextMetadataImageLoader

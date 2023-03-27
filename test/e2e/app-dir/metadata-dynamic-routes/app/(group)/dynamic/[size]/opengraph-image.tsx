@@ -1,7 +1,5 @@
 import { ImageResponse } from 'next/server'
 
-export const alt = 'Open Graph'
-
 export default function og({ params }) {
   const big = params.size === 'big'
   const background = big ? 'orange' : '#000'
@@ -22,8 +20,10 @@ export default function og({ params }) {
             width: 200,
             height: 200,
             background,
+            color: '#fff',
           }}
         />
+        dynamic
       </div>
     ),
     {

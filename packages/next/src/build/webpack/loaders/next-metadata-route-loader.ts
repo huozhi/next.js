@@ -90,13 +90,29 @@ export async function GET() {
 `
 }
 
-function getDynamicImageRouteCode(resourcePath: string) {
+// export async function generateStaticParams({ params }) {
+//   const results = await dynamicImageModule.generateImageMetadata({ params })
+//   console.log('generateStaticParams', { params }, 'results', results.map(({ id }) => ({ ...params, NEXT_IMAGE_ID: id })))
+//   return results.map(({ id }) => ({ ...params, NEXT_IMAGE_ID: id }))
+// }
+
+function getDynamicImageRouteCode(resourcePath: string, hasSSGImage: boolean) {
   return `\
 import { NextResponse } from 'next/server'
-import handler from ${JSON.stringify(resourcePath)}
+import * as dynamicImageModule from ${JSON.stringify(resourcePath)}
+
+${
+  hasSSGImage
+    ? `\
+export { generateImageMetadata } from ${JSON.stringify(resourcePath)}
+`
+    : ''
+}
 
 export function GET(req, ctx) {
-  return handler({ params: ctx.params })
+  console.log('GET', 'ctx', ctx)
+  const { NEXT_IMAGE_ID: id, ...params } = ctx.params || {}
+  return dynamicImageModule.default({ params, id })
 }
 `
 }
@@ -105,9 +121,10 @@ export function GET(req, ctx) {
 // When it's static route, it could be favicon.ico, sitemap.xml, robots.txt etc.
 // TODO-METADATA: improve the cache control strategy
 const nextMetadataRouterLoader: webpack.LoaderDefinitionFunction<MetadataRouteLoaderOptions> =
-  function () {
+  function (content: string) {
     const { resourcePath } = this
     const { pageExtensions } = this.getOptions()
+    const hasSSGImage = content.includes('generateImageMetadata')
 
     const { name: fileBaseName, ext } = getFilenameAndExtension(resourcePath)
     const isDynamic = pageExtensions.includes(ext)
@@ -121,7 +138,7 @@ const nextMetadataRouterLoader: webpack.LoaderDefinitionFunction<MetadataRouteLo
       ) {
         code = getDynamicTextRouteCode(resourcePath)
       } else {
-        code = getDynamicImageRouteCode(resourcePath)
+        code = getDynamicImageRouteCode(resourcePath, hasSSGImage)
       }
     } else {
       code = getStaticRouteCode(resourcePath, fileBaseName)

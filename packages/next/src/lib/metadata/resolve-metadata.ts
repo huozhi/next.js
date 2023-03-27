@@ -225,12 +225,18 @@ async function collectStaticImagesFiles(
   type: keyof NonNullable<ComponentsType['metadata']>
 ) {
   if (!metadata?.[type]) return undefined
+  const imageDataModules: any[] = []
 
-  const iconPromises = metadata[type as 'icon' | 'apple'].map(
-    async (imageModule: (p: any) => Promise<MetadataImageModule>) =>
-      interopDefault(await imageModule(props))
+  const promises = metadata[type]?.map(
+    async (getImageDataMod: (p: any) => Promise<MetadataImageModule[]>) => {
+      const mod = interopDefault(await getImageDataMod(props)).filter(Boolean)
+      imageDataModules.push(...mod)
+    }
   )
-  return iconPromises?.length > 0 ? await Promise.all(iconPromises) : undefined
+
+  if (promises) await Promise.all(promises)
+
+  return imageDataModules.length ? imageDataModules : undefined
 }
 
 async function resolveStaticMetadata(components: ComponentsType, props: any) {
