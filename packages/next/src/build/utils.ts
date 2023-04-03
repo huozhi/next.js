@@ -993,7 +993,7 @@ export async function buildStaticPaths({
 
       const { id: entryId, params = {} } = entry
       const isMetadataImageEntry = typeof entryId !== 'undefined'
-      const idSuffix = isMetadataImageEntry ? `/${entryId}` : ''
+      const idSuffix = isMetadataImageEntry ? entryId : ''
       let builtPage = page + idSuffix
       let encodedBuiltPage = page + idSuffix
       console.log('builtPage', builtPage, '<--', page)
