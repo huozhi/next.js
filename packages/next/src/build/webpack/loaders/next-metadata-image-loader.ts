@@ -45,9 +45,8 @@ async function nextMetadataImageLoader(this: any, content: string) {
 
   const isDynamicResource = pageExtensions.includes(extension)
   const shouldGenerateImages = content.includes('generateImageMetadata')
-  const pageRoute =
-    (isDynamicResource ? fileNameBase : interpolatedName) +
-    (contentHash ? '?' + contentHash : '')
+  const pageRoute = isDynamicResource ? fileNameBase : interpolatedName
+  const pageHash = contentHash ? '?' + contentHash : ''
 
   if (isDynamicResource) {
     // re-export and spread as `exportedImageData` to avoid non-exported error
@@ -57,18 +56,16 @@ async function nextMetadataImageLoader(this: any, content: string) {
     import { interpolateDynamicPath } from 'next/dist/server/server-utils'
     import { getNamedRouteRegex } from 'next/dist/shared/lib/router/utils/route-regex'
 
-    const exportedImageData = { ...exported }
-    export default (props) => {
-      const pathname = ${JSON.stringify(route)}
-      const routeRegex = getNamedRouteRegex(pathname)
-      const route = interpolateDynamicPath(pathname, props.params, routeRegex)
-
+    function getImageData(data, route) {
+      const { size, alt, contentType, id } = data
       const imageData = {
-        alt: exportedImageData.alt,
-        type: exportedImageData.contentType,
-        url: path.join(route, ${JSON.stringify(pageRoute)}),
+        alt,
+        type: contentType,
+        url: path.join(route, ${JSON.stringify(
+          pageRoute
+        )} + id + ${JSON.stringify(pageHash)}),
       }
-      const { size } = exportedImageData
+
       if (size) {
         ${
           type === 'twitter' || type === 'openGraph'
@@ -77,6 +74,19 @@ async function nextMetadataImageLoader(this: any, content: string) {
         }
       }
       return imageData
+    }
+
+    export default async (props) => {
+      const pathname = ${JSON.stringify(route)}
+      const routeRegex = getNamedRouteRegex(pathname)
+      const route = interpolateDynamicPath(pathname, props.params, routeRegex)
+      const generated = ${
+        shouldGenerateImages
+          ? 'await exported.generateImageMetadata(props)'
+          : 'null'
+      }
+
+      return generated ? generated.map((data) => getImageData(data, route)) : [getImageData({ ...exported }, route)]
     }`
   }
 
@@ -117,10 +127,10 @@ async function nextMetadataImageLoader(this: any, content: string) {
 
     const imageData = ${JSON.stringify(imageData)};
 
-    return {
+    return [{
       ...imageData,
-      url: path.join(route, ${JSON.stringify(pageRoute)}),
-    }
+      url: path.join(route, ${JSON.stringify(pageRoute + pageHash)}),
+    }]
   }`
 }
 

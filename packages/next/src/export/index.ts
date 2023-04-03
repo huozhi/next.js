@@ -550,11 +550,18 @@ export default async function exportApp(
         !isAPIRoute(exportPathMap[route].page)
     )
 
-    if (filteredPaths.length !== exportPaths.length) {
+    const filteredMetadataImagePaths = exportPaths.filter(
+      (route) => (exportPathMap[route] as any)._isDynamicMetadataImage
+    )
+
+    if (
+      filteredPaths.length + filteredMetadataImagePaths.length !==
+      exportPaths.length
+    ) {
       hasApiRoutes = true
     }
 
-    if (filteredPaths.length === 0) {
+    if (filteredPaths.length === 0 && filteredMetadataImagePaths.length === 0) {
       return
     }
 

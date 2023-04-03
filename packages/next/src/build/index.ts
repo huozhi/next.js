@@ -1199,6 +1199,7 @@ export default async function build(
       const appNormalizedPaths = new Map<string, string>()
       const appDynamicParamPaths = new Set<string>()
       const appDefaultConfigs = new Map<string, AppConfig>()
+      const metadataImageStaticPaths = new Map<string, string[]>()
       const pageInfos = new Map<string, PageInfo>()
       const pagesManifest = JSON.parse(
         await promises.readFile(manifestPath, 'utf8')
@@ -1580,11 +1581,24 @@ export default async function build(
                           isSsg = true
                         }
 
+                        const metadataImageRoutes =
+                          workerResult.prerenderMetadataImageRoutes
+                        if (metadataImageRoutes) {
+                          metadataImageStaticPaths.set(
+                            originalAppPath,
+                            metadataImageRoutes
+                          )
+                          ssgPageRoutes = metadataImageRoutes
+                          isSsg = true
+                        }
+
                         const appConfig = workerResult.appConfig || {}
                         if (appConfig.revalidate !== 0 && !hasAction) {
                           const isDynamic = isDynamicRoute(page)
                           const hasGenerateStaticParams =
                             !!workerResult.prerenderRoutes?.length
+                          const hasGenerateImageMetadata =
+                            !!workerResult.prerenderMetadataImageRoutes?.length
 
                           if (
                             // Mark the app as static if:
@@ -1599,6 +1613,7 @@ export default async function build(
                           } else if (
                             isDynamic &&
                             !hasGenerateStaticParams &&
+                            !hasGenerateImageMetadata &&
                             (appConfig.dynamic === 'error' ||
                               appConfig.dynamic === 'force-static')
                           ) {
@@ -2382,6 +2397,16 @@ export default async function build(
                 })
               })
 
+              metadataImageStaticPaths.forEach((routes, originalAppPath) => {
+                routes.forEach((route) => {
+                  defaultMap[route] = {
+                    page: originalAppPath,
+                    _isAppDir: true,
+                    _isDynamicMetadataImage: true,
+                  }
+                })
+              })
+
               if (i18n) {
                 for (const page of [
                   ...staticPages,
@@ -2413,6 +2438,7 @@ export default async function build(
                   }
                 }
               }
+              console.log('defaultMap', defaultMap)
               return defaultMap
             },
           }

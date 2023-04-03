@@ -169,6 +169,7 @@ export default async function exportPage({
       const { page } = pathMap
       const pathname = normalizeAppPath(page)
       const isAppDir = (pathMap as any)._isAppDir
+      const isDynamicMetadataImage = (pathMap as any)._isDynamicMetadataImage
       const isDynamicError = (pathMap as any)._isDynamicError
       const filePath = normalizePagePath(path)
       const isDynamic = isDynamicRoute(page)

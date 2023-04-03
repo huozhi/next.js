@@ -869,10 +869,12 @@ export async function buildStaticPaths({
   > & {
     paths: string[]
     encodedPaths: string[]
+    metadataImagePaths: string[]
   }
 > {
   const prerenderPaths = new Set<string>()
   const encodedPrerenderPaths = new Set<string>()
+  const prerenderMetadataImagePaths = new Set<string>()
   const _routeRegex = getRouteRegex(page)
   const _routeMatcher = getRouteMatcher(_routeRegex)
 
@@ -990,7 +992,8 @@ export async function buildStaticPaths({
       }
 
       const { id: entryId, params = {} } = entry
-      const idSuffix = typeof entryId !== 'undefined' ? entryId : ''
+      const isMetadataImageEntry = typeof entryId !== 'undefined'
+      const idSuffix = isMetadataImageEntry ? entryId : ''
       let builtPage = page + idSuffix
       let encodedBuiltPage = page + idSuffix
       console.log('builtPage', builtPage, '<--', page)
@@ -1064,16 +1067,20 @@ export async function buildStaticPaths({
       }
       const curLocale = entry.locale || defaultLocale || ''
 
-      prerenderPaths.add(
-        `${curLocale ? `/${curLocale}` : ''}${
-          curLocale && builtPage === '/' ? '' : builtPage
-        }`
-      )
-      encodedPrerenderPaths.add(
-        `${curLocale ? `/${curLocale}` : ''}${
-          curLocale && encodedBuiltPage === '/' ? '' : encodedBuiltPage
-        }`
-      )
+      if (isMetadataImageEntry) {
+        prerenderMetadataImagePaths.add(builtPage)
+      } else {
+        prerenderPaths.add(
+          `${curLocale ? `/${curLocale}` : ''}${
+            curLocale && builtPage === '/' ? '' : builtPage
+          }`
+        )
+        encodedPrerenderPaths.add(
+          `${curLocale ? `/${curLocale}` : ''}${
+            curLocale && encodedBuiltPage === '/' ? '' : encodedBuiltPage
+          }`
+        )
+      }
     }
   })
 
@@ -1081,6 +1088,7 @@ export async function buildStaticPaths({
     paths: [...prerenderPaths],
     fallback: staticPathsResult.fallback,
     encodedPaths: [...encodedPrerenderPaths],
+    metadataImagePaths: [...prerenderMetadataImagePaths],
   }
 }
 
@@ -1330,6 +1338,7 @@ export async function buildAppStaticPaths({
                 ? true
                 : undefined,
             encodedPaths: undefined,
+            metadataImagePaths: undefined,
           }
         }
 
@@ -1392,6 +1401,7 @@ export async function isPageStatic({
   hasServerProps?: boolean
   hasStaticProps?: boolean
   prerenderRoutes?: string[]
+  prerenderMetadataImageRoutes?: string[]
   encodedPrerenderRoutes?: string[]
   prerenderFallback?: boolean | 'blocking'
   isNextImageImported?: boolean
@@ -1410,6 +1420,7 @@ export async function isPageStatic({
 
       let componentsResult: LoadComponentsReturnType
       let prerenderRoutes: Array<string> | undefined
+      let prerenderMetadataImageRoutes: Array<string> | undefined
       let encodedPrerenderRoutes: Array<string> | undefined
       let prerenderFallback: boolean | 'blocking' | undefined
       let appConfig: AppConfig = {}
@@ -1556,6 +1567,7 @@ export async function isPageStatic({
             paths: prerenderRoutes,
             fallback: prerenderFallback,
             encodedPaths: encodedPrerenderRoutes,
+            metadataImagePaths: prerenderMetadataImageRoutes,
           } = await buildAppStaticPaths({
             page,
             serverHooks,
@@ -1569,7 +1581,10 @@ export async function isPageStatic({
             incrementalCacheHandlerPath,
           }))
         }
-        console.log('prerenderRoutes', prerenderRoutes)
+        console.log(
+          'prerenderMetadataImageRoutes',
+          prerenderMetadataImageRoutes
+        )
       } else {
         if (!Comp || !isValidElementType(Comp) || typeof Comp === 'string') {
           throw new Error('INVALID_DEFAULT_EXPORT')
@@ -1674,6 +1689,7 @@ export async function isPageStatic({
         isHybridAmp: config.amp === 'hybrid',
         isAmpOnly: config.amp === true,
         prerenderRoutes,
+        prerenderMetadataImageRoutes,
         prerenderFallback,
         encodedPrerenderRoutes,
         hasStaticProps,

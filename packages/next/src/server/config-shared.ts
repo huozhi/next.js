@@ -248,6 +248,7 @@ export type ExportPathMap = {
     query?: NextParsedUrlQuery
     _isAppDir?: boolean
     _isDynamicError?: boolean
+    _isDynamicMetadataImage?: boolean
   }
 }
 
