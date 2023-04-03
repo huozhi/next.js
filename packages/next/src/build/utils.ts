@@ -993,7 +993,7 @@ export async function buildStaticPaths({
 
       const { id: entryId, params = {} } = entry
       const isMetadataImageEntry = typeof entryId !== 'undefined'
-      const idSuffix = isMetadataImageEntry ? entryId : ''
+      const idSuffix = isMetadataImageEntry ? `/${entryId}` : ''
       let builtPage = page + idSuffix
       let encodedBuiltPage = page + idSuffix
       console.log('builtPage', builtPage, '<--', page)
@@ -1298,6 +1298,7 @@ export async function buildAppStaticPaths({
             let result
             if (curGenerate.generateStaticParams) {
               result = await curGenerate.generateStaticParams({ params })
+              console.log('generateStaticParams', result)
               // TODO: validate the result is valid here or wait for
               // buildStaticPaths to validate?
               for (const item of result) {
@@ -1308,11 +1309,13 @@ export async function buildAppStaticPaths({
               }
             } else if (curGenerate.generateImageMetadata) {
               result = await curGenerate.generateImageMetadata({ params })
+              console.log('generateImageMetadata', result)
               for (const item of result) {
                 const id: number | string = item.id
                 staticParams.push({ params, id })
               }
             }
+            console.log('result', result)
           }
 
           if (idx < generateParams.length) {

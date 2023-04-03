@@ -65,6 +65,7 @@ export async function loadStaticPaths({
 }): Promise<{
   paths?: string[]
   encodedPaths?: string[]
+  metadataImagePaths?: string[]
   fallback?: boolean | 'blocking'
 }> {
   // update work memory runtime-config

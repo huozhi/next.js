@@ -1654,6 +1654,7 @@ export default class DevServer extends Server {
         isrFlushToDisk: this.nextConfig.experimental.isrFlushToDisk,
         maxMemoryCacheSize: this.nextConfig.experimental.isrMemoryCacheSize,
       })
+      console.log('pathsResult', pathsResult)
       return pathsResult
     }
     const result = this.staticPathsCache.get(pathname)
@@ -1663,7 +1664,11 @@ export default class DevServer extends Server {
       []
     )
       .then((res) => {
-        const { paths: staticPaths = [], fallback } = res.value
+        const {
+          paths: staticPaths = [],
+          metadataImagePaths: metadataImageStaticPaths = [],
+          fallback,
+        } = res.value
         if (!isAppPath && this.nextConfig.output === 'export') {
           if (fallback === 'blocking') {
             throw new Error(
@@ -1675,11 +1680,17 @@ export default class DevServer extends Server {
             )
           }
         }
+        console.log(
+          'staticPaths',
+          staticPaths,
+          'metadataImageStaticPaths',
+          metadataImageStaticPaths
+        )
         const value: {
           staticPaths: string[]
           fallbackMode: 'blocking' | 'static' | false | undefined
         } = {
-          staticPaths,
+          staticPaths: staticPaths.concat(metadataImageStaticPaths),
           fallbackMode:
             fallback === 'blocking'
               ? 'blocking'
