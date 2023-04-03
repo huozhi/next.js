@@ -1309,13 +1309,12 @@ export async function buildAppStaticPaths({
               }
             } else if (curGenerate.generateImageMetadata) {
               result = await curGenerate.generateImageMetadata({ params })
-              console.log('generateImageMetadata', result)
+              // console.log('generateImageMetadata', result)
               for (const item of result) {
                 const id: number | string = item.id
                 staticParams.push({ params, id })
               }
             }
-            console.log('result', result)
           }
 
           if (idx < generateParams.length) {

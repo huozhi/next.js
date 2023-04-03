@@ -1363,6 +1363,7 @@ export default class NextNodeServer extends BaseServer {
 
         if (this.isRouterWorker) {
           let page = pathname
+          // console.log('this.dynamicRoutes', this.dynamicRoutes)
 
           if (!(await this.hasPage(page))) {
             for (const route of this.dynamicRoutes || []) {

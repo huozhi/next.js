@@ -1,5 +1,16 @@
 import { isMetadataRoute } from './is-metadata-route'
 
+function modifyPathname(pathname: string) {
+  const parts = pathname.split('/')
+  const lastPart = parts.pop()
+  const modifiedLastPart = `[${lastPart}]/route`
+
+  parts.push(modifiedLastPart)
+  const modifiedPathname = parts.join('/')
+
+  return modifiedPathname
+}
+
 /**
  * Map metadata page key to the corresponding route
  *

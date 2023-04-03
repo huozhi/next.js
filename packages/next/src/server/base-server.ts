@@ -1180,9 +1180,13 @@ export default abstract class Server<ServerOptions extends Options = Options> {
     staticPaths?: string[]
     fallbackMode?: 'static' | 'blocking' | false
   }> {
+    console.log('base-server getStaticPaths')
     // `staticPaths` is intentionally set to `undefined` as it should've
     // been caught when checking disk data.
     const staticPaths = undefined
+
+    const prerenderManifest = this.getPrerenderManifest()
+    console.log('prerenderManifest', prerenderManifest)
 
     // Read whether or not fallback should exist from the manifest.
     const fallbackField =
@@ -1235,6 +1239,7 @@ export default abstract class Server<ServerOptions extends Options = Options> {
       getRequestMeta(req, '_nextRewroteUrl') || urlPathname
 
     let staticPaths: string[] | undefined
+
     let fallbackMode: false | undefined | 'blocking' | 'static'
 
     if (isAppPath) {
@@ -1244,6 +1249,7 @@ export default abstract class Server<ServerOptions extends Options = Options> {
         requestHeaders: req.headers,
       })
 
+      console.log('base-server', pathsResult)
       staticPaths = pathsResult.staticPaths
       fallbackMode = pathsResult.fallbackMode
 
