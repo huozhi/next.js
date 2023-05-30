@@ -197,6 +197,7 @@ export default class NextNodeServer extends BaseServer {
   private imageResponseCache?: ResponseCache
   private compression?: ExpressMiddleware
   protected renderWorkersPromises?: Promise<void>
+  public requestStats: any
   protected renderWorkers?: {
     middleware?: RenderWorker
     pages?: RenderWorker
@@ -972,16 +973,41 @@ export default class NextNodeServer extends BaseServer {
     renderOpts.clientReferenceManifest = this.clientReferenceManifest
     renderOpts.nextFontManifest = this.nextFontManifest
 
+    if (this.requestStats == null) {
+      this.requestStats = {
+        app: {
+          count: 0,
+          duration: 0,
+        },
+        pages: {
+          count: 0,
+          duration: 0,
+        },
+      }
+    }
+
     if (this.hasAppDir && renderOpts.isAppPath) {
       const { renderToHTMLOrFlight: appRenderToHTMLOrFlight } =
         require('./app-render/app-render') as typeof import('./app-render/app-render')
-      return appRenderToHTMLOrFlight(
+      this.requestStats.app.count++
+      const appStart = process.hrtime()
+      const result = await appRenderToHTMLOrFlight(
         req.originalRequest,
         res.originalResponse,
         pathname,
         query,
         renderOpts
       )
+      const duration = process.hrtime(appStart)
+      this.requestStats.app.duration += duration[0] * 1e3 + duration[1] / 1e6
+
+      // console.log(
+      //   `App render time: ${this.requestStats.app.duration}ms`
+      // )
+      // console.log(
+      //   `pre request duration ${this.requestStats.app.duration / this.requestStats.app.count}`
+      // )
+      return result
     }
 
     throw new Error('Invariant: render should have used routeModule')

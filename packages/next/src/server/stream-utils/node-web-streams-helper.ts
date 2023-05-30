@@ -152,7 +152,7 @@ export function createInsertedHTMLStream(
   })
 }
 
-export function renderToInitialStream({
+export async function renderToInitialStream({
   ReactDOMServer,
   element,
   streamOptions,

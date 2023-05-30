@@ -1,0 +1,7 @@
+CPU     ID                    FUNCTION:NAME
+  7  41902                         :tick-2s 
+
+
+              node`v8::internal::Handle<v8::internal::String> v8::internal::StringTable::LookupKey<v8::internal::SequentialStringKey<unsigned char>, v8::internal::Isolate>(v8::internal::Isolate*, v8::internal::SequentialStringKey<unsigned char>*)+0x54
+              0x6cab9401ac9
+                1

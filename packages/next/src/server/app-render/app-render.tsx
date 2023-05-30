@@ -75,6 +75,8 @@ import { appendMutableCookies } from '../web/spec-extension/adapters/request-coo
 
 export const isEdgeRuntime = process.env.NEXT_RUNTIME === 'edge'
 
+const reactDomServerEdge = require('react-dom/server.edge')
+
 const emptyLoaderTree: LoaderTree = ['', {}, {}]
 
 export type GetDynamicParamFromSegment = (
@@ -1214,7 +1216,11 @@ export async function renderToHTMLOrFlight(
     }
 
     if (isFlight && !staticGenerationStore.isStaticGeneration) {
-      return generateFlight()
+      // const flightStart = performance.now()
+      const flight = await generateFlight()
+      // const flightDuration = performance.now() - flightStart
+      // console.log(`flight duration: ${flightDuration}ms`)
+      return flight
     }
 
     // Below this line is handling for rendering to HTML.
@@ -1413,9 +1419,9 @@ export async function renderToHTMLOrFlight(
           }))
 
         const content = (
-          <InsertedHTML>
-            <ServerComponentsRenderer asNotFound={!!asNotFound} />
-          </InsertedHTML>
+          // <InsertedHTML>
+          <ServerComponentsRenderer asNotFound={!!asNotFound} />
+          // </InsertedHTML>
         )
 
         let polyfillsFlushed = false
@@ -1481,6 +1487,7 @@ export async function renderToHTMLOrFlight(
         }
 
         try {
+          // const startStream = performance.now()
           const renderStream = await renderToInitialStream({
             ReactDOMServer: require('react-dom/server.edge'),
             element: content,
@@ -1506,7 +1513,9 @@ export async function renderToHTMLOrFlight(
               ],
             },
           })
+          // console.log(`app:renderToInitialStream:duration`, performance.now() - startStream)
 
+          // const continuedStart = performance.now()
           const result = await continueFromInitialStream(renderStream, {
             dataStream: serverComponentsInlinedTransformStream?.readable,
             generateStaticHTML:
@@ -1515,6 +1524,7 @@ export async function renderToHTMLOrFlight(
             serverInsertedHTMLToHead: true,
             ...validateRootLayout,
           })
+          // console.log(`app:continueFromInitialStream:duration`, performance.now() - continuedStart)
 
           return result
         } catch (err: any) {
@@ -1586,13 +1596,15 @@ export async function renderToHTMLOrFlight(
             },
           })
 
-          return await continueFromInitialStream(renderStream, {
+          const continued = await continueFromInitialStream(renderStream, {
             dataStream: serverComponentsInlinedTransformStream?.readable,
             generateStaticHTML: staticGenerationStore.isStaticGeneration,
             getServerInsertedHTML,
             serverInsertedHTMLToHead: true,
             ...validateRootLayout,
           })
+
+          return continued
         }
       }
     )
@@ -1616,11 +1628,15 @@ export async function renderToHTMLOrFlight(
       return actionRequestResult
     }
 
+    // const _Start = performance.now()
+
     const renderResult = new RenderResult(
       await bodyResult({
         asNotFound: pagePath === '/404',
       })
     )
+    // const _Duration = performance.now() - _Start
+    // console.log('app:calc:duration', _Duration)
 
     if (staticGenerationStore.pendingRevalidates) {
       await Promise.all(staticGenerationStore.pendingRevalidates)
@@ -1673,7 +1689,13 @@ export async function renderToHTMLOrFlight(
       StaticGenerationAsyncStorageWrapper.wrap(
         staticGenerationAsyncStorage,
         { pathname: pagePath, renderOpts },
-        () => wrappedRender()
+        async () => {
+          const start = performance.now()
+          const r = await wrappedRender()
+          const duration = performance.now() - start
+          // console.log('app:wrappedRender:duration', duration)
+          return r
+        }
       )
   )
 }
