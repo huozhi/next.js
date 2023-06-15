@@ -117,11 +117,11 @@ function noRouter() {
 }
 
 async function renderToString(element: React.ReactElement) {
-  // const start = performance.now()
+  const start = performance.now()
   const renderStream = await ReactDOMServer.renderToReadableStream(element)
   await renderStream.allReady
-  // const duration = performance.now() - start
-  // console.log(`[Rendering performance] renderToString took ${duration}ms`)
+  const duration = performance.now() - start
+  console.log(`[Rendering performance]SSR: renderToString took ${duration}ms`)
   return streamToString(renderStream)
 }
 

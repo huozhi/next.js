@@ -1201,6 +1201,8 @@ export async function renderToHTMLOrFlight(
 
       // For app dir, use the bundled version of Fizz renderer (renderToReadableStream)
       // which contains the subset React.
+
+      const start = performance.now()
       const readable = ComponentMod.renderToReadableStream(
         options
           ? [options.actionResult, buildIdFlightDataPair]
@@ -1211,6 +1213,10 @@ export async function renderToHTMLOrFlight(
           onError: flightDataRendererErrorHandler,
         }
       ).pipeThrough(createBufferedTransformStream())
+      console.log(
+        'app:FLIGHT:renderToReadableStream',
+        performance.now() - start
+      )
 
       return new FlightRenderResult(readable)
     }
@@ -1419,9 +1425,9 @@ export async function renderToHTMLOrFlight(
           }))
 
         const content = (
-          // <InsertedHTML>
-          <ServerComponentsRenderer asNotFound={!!asNotFound} />
-          // </InsertedHTML>
+          <InsertedHTML>
+            <ServerComponentsRenderer asNotFound={!!asNotFound} />
+          </InsertedHTML>
         )
 
         let polyfillsFlushed = false
@@ -1486,12 +1492,14 @@ export async function renderToHTMLOrFlight(
           return flushed
         }
 
+        const ReactDOMServer = require('react-dom/server.edge')
+
         try {
-          // const startStream = performance.now()
-          const renderStream = await renderToInitialStream({
-            ReactDOMServer: require('react-dom/server.edge'),
-            element: content,
-            streamOptions: {
+          const startStream = performance.now()
+
+          const renderStream = await ReactDOMServer.renderToReadableStream(
+            content,
+            {
               onError: htmlRendererErrorHandler,
               nonce,
               // Include hydration scripts in the HTML
@@ -1511,9 +1519,38 @@ export async function renderToHTMLOrFlight(
                         getAssetQueryString(false)
                     )),
               ],
-            },
-          })
-          // console.log(`app:renderToInitialStream:duration`, performance.now() - startStream)
+            }
+          )
+          // renderToInitialStream
+          // ({
+          //   ReactDOMServer,
+          //   element: content,
+          //   streamOptions: {
+          //     onError: htmlRendererErrorHandler,
+          //     nonce,
+          //     // Include hydration scripts in the HTML
+          //     bootstrapScripts: [
+          //       ...(subresourceIntegrityManifest
+          //         ? buildManifest.rootMainFiles.map((src) => ({
+          //             src:
+          //               `${assetPrefix}/_next/` +
+          //               src +
+          //               getAssetQueryString(false),
+          //             integrity: subresourceIntegrityManifest[src],
+          //           }))
+          //         : buildManifest.rootMainFiles.map(
+          //             (src) =>
+          //               `${assetPrefix}/_next/` +
+          //               src +
+          //               getAssetQueryString(false)
+          //           )),
+          //     ],
+          //   },
+          // })
+          console.log(
+            `app:SSR:renderToInitialStream`,
+            performance.now() - startStream
+          )
 
           // const continuedStart = performance.now()
           const result = await continueFromInitialStream(renderStream, {

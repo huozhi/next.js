@@ -47,6 +47,7 @@ export function createServerComponentRenderer<Props>(
   let RSCStream: ReadableStream<Uint8Array>
   const createRSCStream = (props: Props) => {
     if (!RSCStream) {
+      const start = performance.now()
       RSCStream = ComponentMod.renderToReadableStream(
         <ComponentToRender {...(props as any)} />,
         clientReferenceManifest.clientModules,
@@ -55,6 +56,7 @@ export function createServerComponentRenderer<Props>(
           onError: serverComponentsErrorHandler,
         }
       )
+      console.log('app:RSC:renderToReadableStream', performance.now() - start)
     }
     return RSCStream
   }
@@ -63,7 +65,11 @@ export function createServerComponentRenderer<Props>(
 
   const writable = transformStream.writable
   return function ServerComponentWrapper(props: Props): JSX.Element {
+    let start = performance.now()
     const reqStream = createRSCStream(props)
+    // console.log('app:RSC:renderToReadableStream', performance.now() - start)
+
+    start = performance.now()
     const response = useFlightResponse(
       writable,
       reqStream,
@@ -72,6 +78,7 @@ export function createServerComponentRenderer<Props>(
       flightResponseRef,
       nonce
     )
+    // console.log('app:RSC:useFlightResponse', performance.now() - start)
     return use(response)
   }
 }
