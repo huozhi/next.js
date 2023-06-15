@@ -616,6 +616,7 @@ export default class DevServer extends Server {
           })
         }
 
+        console.log('conflictingAppPagePaths', conflictingAppPagePaths)
         const numConflicting = conflictingAppPagePaths.size
         if (numConflicting !== previousConflictingPage) {
           conflictingPageChange = true
