@@ -316,6 +316,7 @@ function InnerLayoutRouter({
   isActive: boolean
   cacheKey: ReturnType<typeof createRouterCacheKey>
 }) {
+  const _start = performance.now()
   const context = useContext(GlobalLayoutRouterContext)
   if (!context) {
     throw new Error('invariant global layout router not mounted')
@@ -443,6 +444,7 @@ function InnerLayoutRouter({
       {childNode.subTreeData}
     </LayoutRouterContext.Provider>
   )
+  console.log('InnerLayoutRouter:init', performance.now() - _start)
   // Ensure root layout is not wrapped in a div as the root layout renders `<html>`
   return subtree
 }
@@ -515,6 +517,7 @@ export default function OuterLayoutRouter({
   asNotFound?: boolean
   styles?: React.ReactNode
 }) {
+  const _start = performance.now()
   const context = useContext(LayoutRouterContext)
   if (!context) {
     throw new Error('invariant expected layout router to be mounted')
@@ -545,17 +548,23 @@ export default function OuterLayoutRouter({
    */
   // TODO-APP: Add handling of `<Offscreen>` when it's available.
   const preservedSegments: Segment[] = [treeSegment]
+  console.log('OuterLayoutRouter:init', performance.now() - _start)
 
   return (
     <>
       {styles}
-      {preservedSegments.map((preservedSegment) => {
+      {preservedSegments.map((preservedSegment, index) => {
         const isChildPropSegment = matchSegment(
           preservedSegment,
           childPropSegment
         )
+        const _start = performance.now()
         const preservedSegmentValue = getSegmentValue(preservedSegment)
         const cacheKey = createRouterCacheKey(preservedSegment)
+        console.log(
+          'OuterLayoutRouter:map:' + index,
+          performance.now() - _start
+        )
 
         return (
           /*

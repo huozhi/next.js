@@ -147,6 +147,8 @@ function Router({
   notFoundStyles,
   asNotFound,
 }: AppRouterProps) {
+  const _start = performance.now()
+
   const initialState = useMemo(
     () =>
       createInitialRouterState({
@@ -443,6 +445,8 @@ function Router({
       <AppRouterAnnouncer tree={tree} />
     </RedirectBoundary>
   )
+
+  console.log('AppRouter:init', performance.now() - _start)
 
   return (
     <>
