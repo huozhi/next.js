@@ -1,1 +1,1 @@
-{"name":"babel-packages","main":"./packages-bundle.js"}
+{"name":"babel-packages","main":"./packages-bundle.js","target":"es2021"}
