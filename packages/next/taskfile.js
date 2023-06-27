@@ -7,7 +7,7 @@ const fs = require('fs-extra')
 const resolveFrom = require('resolve-from')
 
 const compileTargets = {
-  server: 'es2021',
+  server: 'es2021', // for 'node16.8'
   client: 'es5',
 }
 
