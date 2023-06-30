@@ -340,6 +340,7 @@
     "react/require-render-return": "error",
     "react/style-prop-object": "warn",
     "react-hooks/rules-of-hooks": "error",
+    "require-await": "error",
     // "@typescript-eslint/non-nullable-type-assertion-style": "warn",
     "@typescript-eslint/prefer-as-const": "warn",
     "@typescript-eslint/no-redeclare": [
