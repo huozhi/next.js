@@ -301,6 +301,24 @@ export class ClientReferenceManifestPlugin {
           const connections =
             compilation.moduleGraph.getOutgoingConnections(mod)
 
+          const incomingConnections =
+            compilation.moduleGraph.getIncomingConnections(mod)
+
+          for (const conn of incomingConnections) {
+            const dependency = conn.dependency
+            if (!dependency) continue
+
+            const clientEntryMod = compilation.moduleGraph.getResolvedModule(
+              dependency
+            ) as webpack.NormalModule
+
+            const modId = compilation.chunkGraph.getModuleId(clientEntryMod) as
+              | string
+              | number
+              | null
+            console.log('getIncomingConnections:modId', modId)
+          }
+
           for (const connection of connections) {
             const dependency = connection.dependency
             if (!dependency) continue
