@@ -46,17 +46,23 @@ export type LoadComponentsReturnType = {
 }
 
 async function loadDefaultErrorComponentsImpl(
-  distDir: string
+  distDir: string,
+  isAppDir: boolean
 ): Promise<LoadComponentsReturnType> {
+  console.log('loadDefaultErrorComponentsImpl')
   const Document = interopDefault(require('next/dist/pages/_document'))
   const AppMod = require('next/dist/pages/_app')
   const App = interopDefault(AppMod)
 
   // Load the compiled route module for this builtin error.
   // TODO: (wyattjoh) replace this with just exporting the route module when the transition is complete
-  const ComponentMod =
-    require('./future/route-modules/pages/builtin/_error') as typeof import('./future/route-modules/pages/builtin/_error')
-  const Component = ComponentMod.routeModule.userland.default
+  const ComponentMod = isAppDir
+    ? (require('./future/route-modules/app-page/builtin/_error') as typeof import('./future/route-modules/app-page/builtin/_error'))
+    : (require('./future/route-modules/pages/builtin/_error') as typeof import('./future/route-modules/pages/builtin/_error'))
+
+  // @ts-ignore
+  const Component =
+    ComponentMod.routeModule.userland[isAppDir ? 'loaderTree' : 'default']
 
   return {
     App,
@@ -68,10 +74,11 @@ async function loadDefaultErrorComponentsImpl(
     ),
     reactLoadableManifest: {},
     ComponentMod,
-    page: '/_error',
+    pathname: '/_error',
     routeModule: ComponentMod.routeModule,
   }
 }
+
 export const loadDefaultErrorComponents = getTracer().wrap(
   LoadComponentsSpan.loadDefaultErrorComponents,
   loadDefaultErrorComponentsImpl

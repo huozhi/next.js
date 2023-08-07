@@ -789,7 +789,7 @@ export default class DevServer extends Server {
       method: 'getFallbackErrorComponents',
       args: [],
     })
-    return await loadDefaultErrorComponents(this.distDir)
+    return await loadDefaultErrorComponents(this.distDir, true)
   }
 
   async getCompilationError(page: string): Promise<any> {
