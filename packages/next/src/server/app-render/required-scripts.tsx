@@ -14,6 +14,7 @@ export function getRequiredScripts(
   let bootstrapScript: string | { src: string; integrity: string } = ''
   const files = buildManifest.rootMainFiles
   if (files.length === 0) {
+    return [() => {}, '']
     throw new Error(
       'Invariant: missing bootstrap script. This is a bug in Next.js'
     )

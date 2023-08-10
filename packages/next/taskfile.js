@@ -2540,6 +2540,17 @@ export async function pages_error(task, opts) {
     .target('dist/pages')
 }
 
+export async function app_error(task, opts) {
+  await task
+    .source('src/pages/_app-error.tsx')
+    .swc('client', {
+      dev: opts.dev,
+      keepImportAssertions: true,
+      interopClientDefaultExport: true,
+    })
+    .target('dist/pages')
+}
+
 export async function pages_document(task, opts) {
   await task
     .source('src/pages/_document.tsx')
@@ -2575,6 +2586,13 @@ export async function pages_error_esm(task, opts) {
     .target('dist/esm/pages')
 }
 
+export async function app_error_esm(task, opts) {
+  await task
+    .source('src/pages/_app-error.tsx')
+    .swc('client', { dev: opts.dev, keepImportAssertions: true, esm: true })
+    .target('dist/esm/pages')
+}
+
 export async function pages_document_esm(task, opts) {
   await task
     .source('src/pages/_document.tsx')
@@ -2588,12 +2606,15 @@ export async function pages_document_esm(task, opts) {
 }
 
 export async function pages(task, opts) {
-  await task.parallel(['pages_app', 'pages_error', 'pages_document'], opts)
+  await task.parallel(
+    ['pages_app', 'pages_error', 'pages_document', 'app_error'],
+    opts
+  )
 }
 
 export async function pages_esm(task, opts) {
   await task.parallel(
-    ['pages_app_esm', 'pages_error_esm', 'pages_document_esm'],
+    ['pages_app_esm', 'pages_error_esm', 'pages_document_esm', 'app_error_esm'],
     opts
   )
 }

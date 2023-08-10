@@ -1463,6 +1463,7 @@ export const renderToHTMLOrFlight: AppPageRender = (
             integrity: subresourceIntegrityManifest?.[polyfill],
           }))
 
+        console.log('page required scripts')
         const [preinitScripts, bootstrapScript] = getRequiredScripts(
           buildManifest,
           assetPrefix,
@@ -1619,6 +1620,15 @@ export const renderToHTMLOrFlight: AppPageRender = (
           }
 
           const is404 = res.statusCode === 404
+
+          console.log(
+            'res.statusCode',
+            res.statusCode,
+            'tree',
+            tree,
+            'ComponentMod',
+            ComponentMod
+          )
 
           // Preserve the existing RSC inline chunks from the page rendering.
           // To avoid the same stream being operated twice, clone the origin stream for error rendering.

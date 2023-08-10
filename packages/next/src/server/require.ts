@@ -95,6 +95,7 @@ export function getPagePath(
   locales: string[] | undefined,
   isAppPath: boolean
 ): string {
+  console.log('getPagePath', page, distDir, locales, isAppPath)
   const pagePath = getMaybePagePath(page, distDir, locales, isAppPath)
 
   if (!pagePath) {

@@ -1,17 +1,48 @@
+import React from 'react'
 import { RouteKind } from '../../../route-kind'
 
 // import { GlobalError } from '../../../../../client/components/error-boundary'
 import AppRouteModule from '../module'
 
+import * as moduleError from '../../../../../client/components/not-found-error'
+import { LoaderTree } from '../../../../lib/app-dir-module'
+
+export * from '../../../../../server/app-render/entry-base'
+
+const loaderTree: LoaderTree = [
+  '',
+  {
+    children: [
+      '__PAGE__',
+      {},
+      {
+        page: [
+          () => require('next/dist/client/image-component/not-found'),
+          'next/dist/client/image-component/not-found',
+        ],
+      },
+    ],
+  },
+  {
+    layout: [
+      () => require('next/dist/client/components/default-layout'),
+      'next/dist/client/components/default-layout',
+    ],
+  },
+]
+
 export const routeModule = new AppRouteModule({
   // TODO: add descriptor for internal error page
   definition: {
     kind: RouteKind.APP_PAGE,
-    page: '/_error',
-    pathname: '/_error',
-    filename: '',
-    bundlePath: '',
-    appPaths: [],
+    page: '/not-found',
+    pathname: '/not-found',
+    filename: 'next/dist/client/components/not-found-error.js',
+    bundlePath: 'app/not-found',
+    appPaths: ['/not-found'],
   },
-  userland: { loaderTree: ['__DEFAULT__', {}, {}] },
+  userland: {
+    ...moduleError,
+    loaderTree,
+  },
 })

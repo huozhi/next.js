@@ -655,6 +655,26 @@ export default class HotReloader implements NextJsHotReloaderInterface {
       config: this.config,
       dev: true,
     })
+    const fallbackEntrypoints = await createEntrypoints({
+      appDir: this.appDir,
+      pagesDir: this.pagesDir,
+      buildId: this.buildId,
+      config: this.config,
+      envFiles: [],
+      isDev: true,
+      pages: {
+        '/_app': 'next/dist/pages/_app',
+        '/_error': 'next/dist/pages/_error',
+      },
+      appPaths: {
+        ['/not-found']: 'next/dist/client/components/not-found-error',
+      },
+
+      previewMode: this.previewProps,
+      rootDir: this.dir,
+      pageExtensions: this.config.pageExtensions,
+    })
+
     const fallbackConfig = await getBaseWebpackConfig(this.dir, {
       runWebpackSpan: this.hotReloaderSpan,
       dev: true,
@@ -674,23 +694,7 @@ export default class HotReloader implements NextJsHotReloaderInterface {
       },
       originalRedirects: [],
       isDevFallback: true,
-      entrypoints: (
-        await createEntrypoints({
-          appDir: this.appDir,
-          buildId: this.buildId,
-          config: this.config,
-          envFiles: [],
-          isDev: true,
-          pages: {
-            '/_app': 'next/dist/pages/_app',
-            '/_error': 'next/dist/pages/_error',
-          },
-          pagesDir: this.pagesDir,
-          previewMode: this.previewProps,
-          rootDir: this.dir,
-          pageExtensions: this.config.pageExtensions,
-        })
-      ).client,
+      entrypoints: fallbackEntrypoints.client,
       ...info,
     })
     const fallbackCompiler = webpack(fallbackConfig)
@@ -1487,7 +1491,7 @@ export default class HotReloader implements NextJsHotReloaderInterface {
     if (error) {
       throw error
     }
-
+    console.log('onDemandEntries.ensurePage', error)
     return this.onDemandEntries?.ensurePage({
       page,
       clientOnly,

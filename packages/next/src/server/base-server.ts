@@ -1357,7 +1357,9 @@ export default abstract class Server<ServerOptions extends Options = Options> {
   protected async close(): Promise<void> {}
 
   protected getAppPathRoutes(): Record<string, string[]> {
-    const appPathRoutes: Record<string, string[]> = {}
+    const appPathRoutes: Record<string, string[]> = {
+      'not-found': ['next/dist/components/not-found-error'],
+    }
 
     Object.keys(this.appPathsManifest || {}).forEach((entry) => {
       const normalizedPath = normalizeAppPath(entry)
@@ -2585,7 +2587,9 @@ export default abstract class Server<ServerOptions extends Options = Options> {
   }
 
   protected abstract getMiddleware(): MiddlewareRoutingItem | undefined
-  protected abstract getFallbackErrorComponents(): Promise<LoadComponentsReturnType | null>
+  protected abstract getFallbackErrorComponents(
+    isAppPath: boolean
+  ): Promise<LoadComponentsReturnType | null>
   protected abstract getRoutesManifest(): NormalizedRouteManifest | undefined
 
   private async renderToResponseImpl(
@@ -2954,9 +2958,20 @@ export default abstract class Server<ServerOptions extends Options = Options> {
       if (!isWrappedError) {
         this.logError(renderToHtmlError)
       }
-      res.statusCode = 500
-      const fallbackComponents = await this.getFallbackErrorComponents()
+      const isAppPath = !!this.appPathRoutes?.[ctx.pathname]
+      // console.log()
 
+      res.statusCode = 500
+      const fallbackComponents = await this.getFallbackErrorComponents(
+        isAppPath
+      )
+
+      console.log(
+        'getFallbackErrorComponents:fallbackComponents',
+        !!fallbackComponents,
+        'isAppPath',
+        isAppPath
+      )
       if (fallbackComponents) {
         // There was an error, so use it's definition from the route module
         // to add the match to the request.
@@ -2968,7 +2983,7 @@ export default abstract class Server<ServerOptions extends Options = Options> {
         return this.renderToResponseWithComponents(
           {
             ...ctx,
-            pathname: '/_error',
+            pathname: isAppPath ? '/not-found' : '/_error',
             renderOpts: {
               ...ctx.renderOpts,
               // We render `renderToHtmlError` here because `err` is

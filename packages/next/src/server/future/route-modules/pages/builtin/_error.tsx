@@ -2,7 +2,7 @@ import Document from '../../../../../pages/_document'
 import App from '../../../../../pages/_app'
 import { RouteKind } from '../../../route-kind'
 
-import * as moduleError from '../../../../../pages/_error'
+import * as moduleError from '../../../../../pages/_app-error'
 
 import PagesRouteModule from '../module'
 
