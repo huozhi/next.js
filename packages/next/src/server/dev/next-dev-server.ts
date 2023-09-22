@@ -179,6 +179,9 @@ export default class DevServer extends Server {
       })
     }
 
+    this.renderOpts.verboseLogging =
+      !!this.nextConfig.experimental.logging?.level
+
     const { pagesDir, appDir } = findPagesDir(this.dir)
     this.pagesDir = pagesDir
     this.appDir = appDir

@@ -286,6 +286,7 @@ export default abstract class Server<ServerOptions extends Options = Options> {
     largePageDataBytes?: number
     appDirDevErrorLogger?: (err: any) => Promise<void>
     strictNextHead: boolean
+    verboseLogging?: boolean
   }
   protected readonly serverOptions: Readonly<ServerOptions>
   protected readonly appPathRoutes?: Record<string, string[]>

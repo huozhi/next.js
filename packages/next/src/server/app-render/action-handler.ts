@@ -18,6 +18,7 @@ import {
   getURLFromRedirectError,
   isRedirectError,
 } from '../../client/components/redirect'
+import * as Log from '../../build/output/log'
 import RenderResult from '../render-result'
 import { StaticGenerationStore } from '../../client/components/static-generation-async-storage.external'
 import { FlightRenderResult } from './flight-render-result'
@@ -246,6 +247,7 @@ export async function handleAction({
   staticGenerationStore,
   requestStore,
   serverActionsBodySizeLimit,
+  verboseLogging,
 }: {
   req: IncomingMessage
   res: ServerResponse
@@ -260,6 +262,7 @@ export async function handleAction({
   staticGenerationStore: StaticGenerationStore
   requestStore: RequestStore
   serverActionsBodySizeLimit?: SizeLimit
+  verboseLogging: boolean
 }): Promise<undefined | RenderResult | 'not-found'> {
   let actionId = req.headers[ACTION.toLowerCase()] as string
   const contentType = req.headers['content-type']
@@ -268,12 +271,12 @@ export async function handleAction({
   const isMultipartAction =
     req.method === 'POST' && contentType?.startsWith('multipart/form-data')
 
-  const isFetchAction =
+  const isDataPostAction =
     actionId !== undefined &&
     typeof actionId === 'string' &&
     req.method === 'POST'
 
-  if (isFetchAction || isURLEncodedAction || isMultipartAction) {
+  if (isDataPostAction || isURLEncodedAction || isMultipartAction) {
     // ensure we avoid caching server actions unexpectedly
     res.setHeader(
       'Cache-Control',
@@ -317,7 +320,7 @@ export async function handleAction({
           if (isMultipartAction) {
             // TODO-APP: Add streaming support
             const formData = await webRequest.request.formData()
-            if (isFetchAction) {
+            if (isDataPostAction) {
               bound = await decodeReply(formData, serverModuleMap)
             } else {
               const action = await decodeAction(formData, serverModuleMap)
@@ -354,7 +357,7 @@ export async function handleAction({
           } = require(`react-server-dom-webpack/server.node`)
 
           if (isMultipartAction) {
-            if (isFetchAction) {
+            if (isDataPostAction) {
               const busboy = require('busboy')
               const bb = busboy({ headers: req.headers })
               req.pipe(bb)
@@ -420,13 +423,18 @@ export async function handleAction({
           serverActionsManifest[
             process.env.NEXT_RUNTIME === 'edge' ? 'edge' : 'node'
           ][actionId].workers[workerName]
+
         const actionHandler =
           ComponentMod.__next_app__.require(actionModId)[actionId]
 
         const returnVal = await actionHandler.apply(null, bound)
 
+        if (verboseLogging) {
+          Log.info('execute action', actionId, workerName)
+        }
+
         // For form actions, we need to continue rendering the page.
-        if (isFetchAction) {
+        if (isDataPostAction) {
           await addRevalidationHeader(res, {
             staticGenerationStore,
             requestStore,
@@ -452,7 +460,7 @@ export async function handleAction({
           requestStore,
         })
 
-        if (isFetchAction) {
+        if (isDataPostAction) {
           return createRedirectRenderResult(
             req,
             res,
@@ -482,7 +490,7 @@ export async function handleAction({
           requestStore,
         })
 
-        if (isFetchAction) {
+        if (isDataPostAction) {
           const promise = Promise.reject(err)
           try {
             await promise
@@ -496,7 +504,7 @@ export async function handleAction({
         return 'not-found'
       }
 
-      if (isFetchAction) {
+      if (isDataPostAction) {
         res.statusCode = 500
         await Promise.all(staticGenerationStore.pendingRevalidates || [])
         const promise = Promise.reject(err)

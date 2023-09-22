@@ -1729,6 +1729,8 @@ export const renderToHTMLOrFlight: AppPageRender = (
       }
     )
 
+    const verboseLogging = !!renderOpts.verboseLogging
+
     // For action requests, we handle them differently with a special render result.
     const actionRequestResult = await handleAction({
       req,
@@ -1740,6 +1742,7 @@ export const renderToHTMLOrFlight: AppPageRender = (
       staticGenerationStore,
       requestStore,
       serverActionsBodySizeLimit,
+      verboseLogging,
     })
 
     if (actionRequestResult === 'not-found') {
