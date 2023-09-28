@@ -2980,6 +2980,7 @@ export default abstract class Server<ServerOptions extends Options = Options> {
           params: undefined,
         })
 
+        console.log('ctx.renderOpts', ctx.renderOpts)
         return this.renderToResponseWithComponents(
           {
             ...ctx,

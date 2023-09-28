@@ -1,4 +1,3 @@
-import React from 'react'
 import { RouteKind } from '../../../route-kind'
 
 // import { GlobalError } from '../../../../../client/components/error-boundary'
@@ -17,8 +16,8 @@ const loaderTree: LoaderTree = [
       {},
       {
         page: [
-          () => require('next/dist/client/image-component/not-found'),
-          'next/dist/client/image-component/not-found',
+          () => require('next/dist/client/components/not-found-error'),
+          'next/dist/client/components/not-found-error',
         ],
       },
     ],
