@@ -60,6 +60,8 @@ export function RuntimeError({ error }: RuntimeErrorProps) {
     }
   }, [all, allCallStackFrames, allLeadingFrames, firstFrame])
 
+  const hydrationDiff = (globalThis as any).hydrationDiff
+
   return (
     <React.Fragment>
       {firstFrame ? (
@@ -73,6 +75,15 @@ export function RuntimeError({ error }: RuntimeErrorProps) {
             stackFrame={firstFrame.originalStackFrame!}
             codeFrame={firstFrame.originalCodeFrame!}
           />
+          <div style={{ position: 'relative', width: '100%' }}>
+            <DiffViewer
+              oldValue={hydrationDiff.ssrHtml}
+              newValue={hydrationDiff.csrHtml}
+              leftTitle={'Server-Side Render'}
+              rightTitle={'Client-Side Render'}
+              compareMethod={DiffMethod.WORDS}
+            />
+          </div>
         </React.Fragment>
       ) : undefined}
 

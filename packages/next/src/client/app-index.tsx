@@ -15,6 +15,12 @@ import {
   ActionQueueContext,
   createMutableActionQueue,
 } from '../shared/lib/router/action-queue'
+import pretty from 'pretty'
+
+const hydrationDiff = ((globalThis as any).hydrationDiff = {
+  ssrHtml: '',
+  csrHtml: '',
+})
 
 // Since React doesn't call onerror for errors caught in error boundaries.
 const origConsoleError = window.console.error
@@ -29,6 +35,10 @@ window.addEventListener('error', (ev: WindowEventMap['error']): void => {
   if (isNextRouterError(ev.error)) {
     ev.preventDefault()
     return
+  }
+  const msg = ev.message
+  if (msg.includes('hydration') || msg.includes('hydrating')) {
+    hydrationDiff.csrHtml = pretty(document.documentElement.innerHTML)
   }
 })
 
@@ -155,6 +165,8 @@ function Root({ children }: React.PropsWithChildren<{}>): React.ReactElement {
 
 export function hydrate() {
   if (process.env.NODE_ENV !== 'production') {
+    hydrationDiff.ssrHtml = pretty(document.documentElement.innerHTML)
+
     const rootLayoutMissingTagsError = (self as any)
       .__next_root_layout_missing_tags_error
     const HotReload: typeof import('./components/react-dev-overlay/app/hot-reloader-client').default =
