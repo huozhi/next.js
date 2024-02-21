@@ -163,7 +163,7 @@ export async function createApp({
         )
         console.log()
         await retry(() => downloadAndExtractRepo(root, repoInfo2), {
-          retries: 3,
+          // retries: 3,
         })
       } else {
         console.log(
@@ -173,7 +173,7 @@ export async function createApp({
         )
         console.log()
         await retry(() => downloadAndExtractExample(root, example), {
-          retries: 3,
+          // retries: 3,
         })
       }
     } catch (reason) {

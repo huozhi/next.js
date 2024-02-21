@@ -96,11 +96,12 @@
     "@swc/helpers": "0.5.5",
     "busboy": "1.6.0",
     "caniuse-lite": "^1.0.30001579",
+    "classnames": "2.5.1",
+    "diff": "5.2.0",
     "diff2html": "3.4.47",
     "graceful-fs": "^4.2.11",
     "postcss": "8.4.31",
     "pretty": "2.0.0",
-    "react-diff-viewer": "3.1.1",
     "styled-jsx": "5.1.1"
   },
   "peerDependencies": {
