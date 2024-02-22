@@ -421,6 +421,9 @@ declare module 'next/dist/compiled/@vercel/og' {
 declare module 'next/dist/compiled/@vercel/og/index.node'
 declare module 'next/dist/compiled/@vercel/og/index.edge'
 
+declare module 'next/dist/compiled/react-diff-view'
+declare module 'next/dist/compiled/diff'
+
 declare namespace NodeJS {
   interface ProcessVersions {
     pnp?: string

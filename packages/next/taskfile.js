@@ -2147,6 +2147,42 @@ export async function ncc_https_proxy_agent(task, opts) {
     .target('src/compiled/https-proxy-agent')
 }
 
+// eslint-disable-next-line camelcase
+externals['unidiff'] = 'next/dist/compiled/unidiff'
+export async function ncc_unidiff(task, opts) {
+  await task
+    .source(relative(__dirname, require.resolve('unidiff')))
+    .ncc({ packageName: 'unidiff', externals })
+    .target('src/compiled/unidiff')
+}
+
+// eslint-disable-next-line camelcase
+externals['react-diff-view'] = 'next/dist/compiled/react-diff-view'
+export async function ncc_react_diff_view(task, opts) {
+  await task
+    .source(relative(__dirname, require.resolve('react-diff-view')))
+    .ncc({
+      packageName: 'react-diff-view',
+      externals: {
+        ...externals,
+        react: 'react',
+      },
+    })
+    .target('src/compiled/react-diff-view')
+
+  await task
+    .source(
+      relative(
+        __dirname,
+        join(
+          dirname(require.resolve('react-diff-view/package.json')),
+          'style/index.css'
+        )
+      )
+    )
+    .target('src/compiled/react-diff-view/style/index.css')
+}
+
 export async function precompile(task, opts) {
   await task.parallel(
     [
@@ -2282,6 +2318,8 @@ export async function ncc(task, opts) {
         'ncc_http_proxy_agent',
         'ncc_https_proxy_agent',
         'ncc_mini_css_extract_plugin',
+        'ncc_unidiff',
+        'ncc_react_diff_view',
       ],
       opts
     )

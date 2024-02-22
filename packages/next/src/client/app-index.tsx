@@ -38,7 +38,7 @@ window.addEventListener('error', (ev: WindowEventMap['error']): void => {
   }
   const msg = ev.message
   if (msg.includes('hydration') || msg.includes('hydrating')) {
-    hydrationDiff.csrHtml = pretty(document.documentElement.innerHTML)
+    hydrationDiff.csrHtml = pretty(document.body.outerHTML)
   }
 })
 
@@ -165,7 +165,7 @@ function Root({ children }: React.PropsWithChildren<{}>): React.ReactElement {
 
 export function hydrate() {
   if (process.env.NODE_ENV !== 'production') {
-    hydrationDiff.ssrHtml = pretty(document.documentElement.innerHTML)
+    hydrationDiff.ssrHtml = pretty(document.body.outerHTML)
 
     const rootLayoutMissingTagsError = (self as any)
       .__next_root_layout_missing_tags_error
