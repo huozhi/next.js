@@ -418,6 +418,10 @@ declare module 'next/dist/compiled/@vercel/og/satori-types' {
 declare module 'next/dist/compiled/@vercel/og' {
   export * from '@vercel/og'
 }
+declare module 'next/dist/compiled/pretty' {
+  import m from 'pretty'
+  export = m
+}
 declare module 'next/dist/compiled/@vercel/og/index.node'
 declare module 'next/dist/compiled/@vercel/og/index.edge'
 

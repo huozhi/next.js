@@ -4,36 +4,10 @@ import type { ReadyRuntimeError } from '../../helpers/getErrorByType'
 import { noop as css } from '../../helpers/noop-template'
 import { groupStackFramesByFramework } from '../../helpers/group-stack-frames-by-framework'
 import { GroupedStackFrames } from './GroupedStackFrames'
-import { parseDiff, Diff, Hunk } from 'next/dist/compiled/react-diff-view'
-// @ts-ignore
-import { formatLines, diffLines } from 'next/dist/compiled/unidiff'
-
+import { isHydrationError } from '../../../../is-hydration-error'
+import { HtmlDiffView } from './html-diff-view'
 
 export type RuntimeErrorProps = { error: ReadyRuntimeError }
-
-function DiffView({ diffText }: { diffText: string }) {
-  const files = parseDiff(diffText)
-  return (
-    <div>
-      {files.map((file: any) => {
-        const { oldRevision, newRevision, type, hunks } = file
-        return (
-          <Diff
-            optimizeSelection
-            key={oldRevision + '-' + newRevision}
-            viewType="split"
-            diffType={type}
-            hunks={hunks}
-          >
-            {(hunks: any) =>
-              hunks.map((hunk: any) => <Hunk key={hunk.content} hunk={hunk} />)
-            }
-          </Diff>
-        )
-      })}
-    </div>
-  )
-}
 
 export function RuntimeError({ error }: RuntimeErrorProps) {
   const { firstFrame, allLeadingFrames, allCallStackFrames } =
@@ -88,12 +62,7 @@ export function RuntimeError({ error }: RuntimeErrorProps) {
     }
   }, [all, allCallStackFrames, allLeadingFrames, firstFrame])
 
-  const hydrationDiff = (globalThis as any).hydrationDiff
-
-  const diffText = formatLines(
-    diffLines(hydrationDiff.ssrHtml, hydrationDiff.csrHtml),
-    { context: 1 }
-  )
+  const isRuntimeHydrationMismatchError = isHydrationError(error.error)
 
   return (
     <React.Fragment>
@@ -108,9 +77,7 @@ export function RuntimeError({ error }: RuntimeErrorProps) {
             stackFrame={firstFrame.originalStackFrame!}
             codeFrame={firstFrame.originalCodeFrame!}
           />
-          <div style={{ position: 'relative', width: '100%' }}>
-            <DiffView diffText={diffText} />
-          </div>
+          {isRuntimeHydrationMismatchError ? <HtmlDiffView /> : null}
         </React.Fragment>
       ) : undefined}
 
@@ -227,6 +194,7 @@ export const styles = css`
   }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
   [data-nextjs-container-errors-pseudo-html] {
     position: relative;
     padding-left: var(--size-gap-triple);
@@ -236,6 +204,9 @@ export const styles = css`
     position: absolute;
     left: 0;
 =======
+=======
+  /* Diff viewer */
+>>>>>>> f725b9c5ab (extract component)
   :host {
     --diff-background-color: initial;
     --diff-text-color: initial;
@@ -259,6 +230,16 @@ export const styles = css`
     --diff-code-selected-background-color: #fffce0;
     --diff-code-selected-text-color: var(--diff-text-color);
     --diff-omit-gutter-line-color: #cb2a1d;
+  }
+  @media (prefers-color-scheme: dark) {
+    :host {
+      --diff-code-delete-background-color: rgba(229, 83, 75, 0.1);
+      --diff-code-insert-background-color: rgba(70, 149, 74, 0.15);
+      --diff-code-delete-edit-background-color: rgba(229, 83, 75, 0.4);
+      --diff-gutter-delete-background-color: rgba(229, 83, 75, 0.1);
+      --diff-gutter-insert-background-color: rgba(87, 171, 90, 0.3);
+      --diff-gutter-delete-edit-background-color: rgba(229, 83, 75, 0.4);
+    }
   }
   .diff {
     background-color: var(--diff-background-color);
