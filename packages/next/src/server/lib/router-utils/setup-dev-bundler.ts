@@ -32,6 +32,7 @@ import { getSortedRoutes } from '../../../shared/lib/router/utils'
 import { sortByPageExts } from '../../../build/sort-by-page-exts'
 import { getConventionFileBaseName } from '../../../build/get-convention-file-base-name'
 import { normalizeCatchAllRoutes } from './normalize-catchall-routes'
+import { watchPublicFolder } from './watch-public-folder'
 import { verifyAndRunTypeScript } from '../../../lib/verify-typescript-setup'
 import { verifyPartytownSetup } from '../../../lib/verify-partytown-setup'
 import { getNamedRouteRegex } from '../../../shared/lib/router/utils/route-regex'
@@ -300,6 +301,18 @@ async function startWatcher(
       })()
 
   await hotReloader.start()
+
+  const stopWatchingPublicFolder = watchPublicFolder(
+    path.join(opts.dir, 'public'),
+    nextConfig.basePath,
+    (paths) => {
+      hotReloader.send({
+        type: HMR_MESSAGE_SENT_TO_BROWSER.PUBLIC_FILE_CHANGES,
+        paths,
+      })
+    }
+  )
+  opts.onDevServerCleanup?.(async () => stopWatchingPublicFolder())
 
   const distTypesDir = path.join(distDir, 'types')
   await writeRouteTypesManifest(

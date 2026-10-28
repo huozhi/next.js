@@ -4,7 +4,7 @@ import {
   RSC_MODULE_TYPES,
 } from '../../../shared/lib/constants'
 import { getModuleBuildInfo } from './get-module-build-info'
-import { regexCSS } from './utils'
+import { isImageResource, regexCSS } from './utils'
 
 /**
  * { [client import path]: [exported names] }
@@ -35,10 +35,12 @@ export default function transformSource(
     modules = modules ? [modules] : []
   }
 
-  const code = modules
+  const items = modules
     .map((x) => JSON.parse(x) as FlightClientEntryModuleItem)
     // Filter out CSS files in the SSR compilation
     .filter(({ request }) => (isServer ? !regexCSS.test(request) : true))
+
+  let code = items
     .map(({ request, ids }: FlightClientEntryModuleItem) => {
       const importPath = JSON.stringify(
         request.startsWith(BARREL_OPTIMIZATION_PREFIX)
@@ -58,6 +60,22 @@ export default function transformSource(
       }
     })
     .join(';\n')
+
+  // Images imported by Server Components are added to the client entry so the
+  // client compilation emits them. They aren't rendered by client code, so
+  // nothing on the client accepts their updates and an edit would bubble up
+  // to the entry and force a full reload. Accept them here instead: the
+  // Server Components refresh renders the new image URL.
+  if (!isServer && this.hot) {
+    const imageRequests = items
+      .map(({ request }) => request)
+      .filter(isImageResource)
+    if (imageRequests.length > 0) {
+      code += `\nif (module.hot) module.hot.accept(${JSON.stringify(
+        imageRequests
+      )});\n`
+    }
+  }
 
   const buildInfo = getModuleBuildInfo(this._module!)
 

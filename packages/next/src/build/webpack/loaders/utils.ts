@@ -5,6 +5,10 @@ import { getModuleBuildInfo } from './get-module-build-info'
 const imageExtensions = ['jpg', 'jpeg', 'png', 'webp', 'avif', 'ico', 'svg']
 const imageRegex = new RegExp(`\\.(${imageExtensions.join('|')})$`)
 
+export function isImageResource(resource: string): boolean {
+  return imageRegex.test(resource)
+}
+
 // Determine if the whole module is client action, 'use server' in nested closure in the client module
 function isActionClientLayerModule(mod: webpack.NormalModule) {
   const rscInfo = getModuleBuildInfo(mod).rsc
@@ -16,7 +20,7 @@ export function isClientComponentEntryModule(mod: webpack.NormalModule) {
   const hasClientDirective = rscInfo?.isClientRef
   const isActionLayerEntry = isActionClientLayerModule(mod)
   return (
-    hasClientDirective || isActionLayerEntry || imageRegex.test(mod.resource)
+    hasClientDirective || isActionLayerEntry || isImageResource(mod.resource)
   )
 }
 

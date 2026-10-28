@@ -27,6 +27,7 @@ export const enum HMR_MESSAGE_SENT_TO_BROWSER {
   RELOAD_PAGE = 'reloadPage',
   SERVER_COMPONENT_CHANGES = 'serverComponentChanges',
   STATIC_PARAMS_CHANGED = 'staticParamsChanged',
+  PUBLIC_FILE_CHANGES = 'publicFileChanges',
   MIDDLEWARE_CHANGES = 'middlewareChanges',
   CLIENT_CHANGES = 'clientChanges',
   SERVER_ONLY_CHANGES = 'serverOnlyChanges',
@@ -131,6 +132,16 @@ export interface ServerComponentChangesMessage {
  */
 export interface StaticParamsChangedMessage {
   type: HMR_MESSAGE_SENT_TO_BROWSER.STATIC_PARAMS_CHANGED
+}
+
+/**
+ * Sent when files in the `public` folder change. These files aren't part of
+ * the module graph, so the browser re-requests the elements that use them.
+ */
+export interface PublicFileChangesMessage {
+  type: HMR_MESSAGE_SENT_TO_BROWSER.PUBLIC_FILE_CHANGES
+  /** Decoded URL pathnames of the changed files, including the `basePath`. */
+  paths: ReadonlyArray<string>
 }
 
 export interface MiddlewareChangesMessage {
@@ -282,6 +293,7 @@ export type HmrMessageSentToBrowser =
   | ReloadPageMessage
   | ServerComponentChangesMessage
   | StaticParamsChangedMessage
+  | PublicFileChangesMessage
   | ClientChangesMessage
   | MiddlewareChangesMessage
   | ServerOnlyChangesMessage

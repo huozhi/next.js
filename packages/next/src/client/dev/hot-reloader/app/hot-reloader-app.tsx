@@ -31,6 +31,7 @@ import type { McpPageMetadataResponse } from '../../../../shared/lib/mcp-page-me
 import { useUntrackedPathname } from '../../../components/navigation-untracked'
 import reportHmrLatency from '../../report-hmr-latency'
 import { TurbopackHmr } from '../turbopack-hot-reloader-common'
+import { refreshPublicFiles } from '../refresh-public-files'
 import {
   publicAppRouterInstance,
   type GlobalErrorState,
@@ -476,6 +477,10 @@ export function processMessage(
         dispatcher.onRefresh()
       })
 
+      return
+    }
+    case HMR_MESSAGE_SENT_TO_BROWSER.PUBLIC_FILE_CHANGES: {
+      refreshPublicFiles(message.paths)
       return
     }
     case HMR_MESSAGE_SENT_TO_BROWSER.RELOAD_PAGE: {

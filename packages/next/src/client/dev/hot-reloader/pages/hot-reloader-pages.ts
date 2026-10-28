@@ -61,6 +61,7 @@ import {
 import { RuntimeErrorHandler } from '../../runtime-error-handler'
 import reportHmrLatency from '../../report-hmr-latency'
 import { TurbopackHmr } from '../turbopack-hot-reloader-common'
+import { refreshPublicFiles } from '../refresh-public-files'
 
 // This alternative WebpackDevServer combines the functionality of:
 // https://github.com/webpack/webpack-dev-server/blob/webpack-1/client/index.js
@@ -366,6 +367,10 @@ function processMessage(message: HmrMessageSentToBrowser) {
     }
     case HMR_MESSAGE_SENT_TO_BROWSER.STATIC_PARAMS_CHANGED: {
       // Only relevant to the App Router; ignored in the Pages Router client.
+      return
+    }
+    case HMR_MESSAGE_SENT_TO_BROWSER.PUBLIC_FILE_CHANGES: {
+      refreshPublicFiles(message.paths)
       return
     }
     case HMR_MESSAGE_SENT_TO_BROWSER.SERVER_ERROR: {
